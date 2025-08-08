@@ -31,6 +31,9 @@ static void VCountIntr(void);
 static void SerialIntr(void);
 static void IntrDummy(void);
 
+// Defined in the linker script so that the test build can override it.
+extern void gInitialMainCB2(void);
+
 const u8 gGameVersion = GAME_VERSION;
 
 const u8 gGameLanguage = GAME_LANGUAGE; // English
@@ -59,15 +62,16 @@ const IntrFunc gIntrTableTemplate[] =
 
 static u16 sUnusedVar; // Never read
 
-COMMON_DATA u16 gKeyRepeatStartDelay = 0;
-COMMON_DATA bool8 gLinkTransferringData = 0;
-COMMON_DATA struct Main gMain = {0};
-COMMON_DATA u16 gKeyRepeatContinueDelay = 0;
-COMMON_DATA bool8 gSoftResetDisabled = 0;
-COMMON_DATA IntrFunc gIntrTable[INTR_COUNT] = {0};
-COMMON_DATA u8 gLinkVSyncDisabled = 0;
-COMMON_DATA u32 IntrMain_Buffer[0x200] = {0};
-COMMON_DATA s8 gPcmDmaCounter = 0;
+u16 gKeyRepeatStartDelay;
+bool8 gLinkTransferringData;
+struct Main gMain;
+u16 gKeyRepeatContinueDelay;
+bool8 gSoftResetDisabled;
+IntrFunc gIntrTable[INTR_COUNT];
+u8 gLinkVSyncDisabled;
+u32 IntrMain_Buffer[0x200];
+s8 gPcmDmaCounter;
+void *gAgbMainLoop_sp;
 
 static EWRAM_DATA u16 sTrainerId = 0;
 
@@ -128,6 +132,12 @@ void AgbMain(void)
     AGBPrintInit();
 #endif
 #endif
+    gAgbMainLoop_sp = __builtin_frame_address(0);
+    AgbMainLoop();
+}
+
+void AgbMainLoop(void)
+{
     for (;;)
     {
         ReadKeys();
@@ -180,7 +190,7 @@ static void InitMainCallbacks(void)
     gTrainerHillVBlankCounter = NULL;
     gMain.vblankCounter2 = 0;
     gMain.callback1 = NULL;
-    SetMainCallback2(CB2_InitCopyrightScreenAfterBootup);
+    SetMainCallback2(gInitialMainCB2);
     gSaveBlock2Ptr = &gSaveblock2.block;
     gPokemonStoragePtr = &gPokemonStorage.block;
 }
@@ -410,9 +420,7 @@ static void IntrDummy(void)
 static void WaitForVBlank(void)
 {
     gMain.intrCheck &= ~INTR_FLAG_VBLANK;
-
-    while (!(gMain.intrCheck & INTR_FLAG_VBLANK))
-        ;
+    VBlankIntrWait();
 }
 
 void SetTrainerHillVBlankCounter(u32 *counter)

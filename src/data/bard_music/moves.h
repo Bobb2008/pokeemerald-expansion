@@ -94,10 +94,10 @@ static const struct BardSoundTemplate sBardSoundTemplates_Moves[MOVES_COUNT][MAX
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
-    [MOVE_VICE_GRIP] = {
-        { .songId = PHONEME_ID(PH_PRICE_SOLO) },
-        { .songId = PHONEME_ID(PH_KIT_SOLO) },
-        PREV_BARD_SOUND,
+    [MOVE_VISE_GRIP] = {
+        { .songLengthId = 20 },
+        { .songLengthId = 17 },
+        { .songLengthId = 51 },
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
@@ -1094,11 +1094,11 @@ static const struct BardSoundTemplate sBardSoundTemplates_Moves[MOVES_COUNT][MAX
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
-    [MOVE_HI_JUMP_KICK] = {
-        { .songId = PHONEME_ID(PH_PRICE_BLEND) },
-        { .songId = PHONEME_ID(PH_STRUT_SOLO) },
-        { .songId = PHONEME_ID(PH_KIT_SOLO) },
-        PREV_BARD_SOUND,
+    [MOVE_HIGH_JUMP_KICK] = {
+        { .songLengthId = 18 },
+        { .songLengthId = 44 },
+        { .songLengthId = 17 },
+        { .songLengthId = 51 },
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
@@ -1486,10 +1486,10 @@ static const struct BardSoundTemplate sBardSoundTemplates_Moves[MOVES_COUNT][MAX
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
-    [MOVE_FAINT_ATTACK] = {
-        { .songId = PHONEME_ID(PH_FACE_BLEND) },
-        { .songId = PHONEME_ID(PH_STRUT_BLEND) },
-        { .songId = PHONEME_ID(PH_TRAP_BLEND) },
+    [MOVE_FEINT_ATTACK] = {
+        { .songLengthId =  3 },
+        { .songLengthId = 42 },
+        { .songLengthId =  0 },
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
@@ -2126,10 +2126,10 @@ static const struct BardSoundTemplate sBardSoundTemplates_Moves[MOVES_COUNT][MAX
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
-    [MOVE_SMELLING_SALT] = {
-        { .songId = PHONEME_ID(PH_DRESS_BLEND) },
-        { .songId = PHONEME_ID(PH_FLEECE_BLEND) },
-        { .songId = PHONEME_ID(PH_THOUGHT_BLEND) },
+    [MOVE_SMELLING_SALTS] = {
+        { .songLengthId = 9 },
+        { .songLengthId = 12 },
+        { .songLengthId = 27 },
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,

@@ -46,8 +46,22 @@ AS := $(PREFIX)as
 LD := $(PREFIX)ld
 
 EXE :=
-ifeq ($(OS),Windows_NT)
-  EXE := .exe
+endif
+
+TITLE       := POKEMON EMER
+GAME_CODE   := BPEE
+MAKER_CODE  := 01
+REVISION    := 0
+MODERN      ?= 0
+TEST        ?= 0
+ANALYZE     ?= 0
+
+ifeq (modern,$(MAKECMDGOALS))
+  MODERN := 1
+endif
+
+ifeq (check,$(MAKECMDGOALS))
+  TEST := 1
 endif
 
 # use arm-none-eabi-cpp for macOS
@@ -89,19 +103,26 @@ ELF := $(ROM:.gba=.elf)
 MAP := $(ROM:.gba=.map)
 SYM := $(ROM:.gba=.sym)
 
-# Commonly used directories
+TEST_OBJ_DIR_NAME := build/test
+TESTELF = $(ROM:.gba=-test.elf)
+HEADLESSELF = $(ROM:.gba=-test-headless.elf)
+
 C_SUBDIR = src
 ASM_SUBDIR = asm
 DATA_SRC_SUBDIR = src/data
 DATA_ASM_SUBDIR = data
 SONG_SUBDIR = sound/songs
 MID_SUBDIR = sound/songs/midi
+SAMPLE_SUBDIR = sound/direct_sound_samples
+CRY_SUBDIR = sound/direct_sound_samples/cries
+TEST_SUBDIR = test
 
 C_BUILDDIR = $(OBJ_DIR)/$(C_SUBDIR)
 ASM_BUILDDIR = $(OBJ_DIR)/$(ASM_SUBDIR)
 DATA_ASM_BUILDDIR = $(OBJ_DIR)/$(DATA_ASM_SUBDIR)
 SONG_BUILDDIR = $(OBJ_DIR)/$(SONG_SUBDIR)
 MID_BUILDDIR = $(OBJ_DIR)/$(MID_SUBDIR)
+TEST_BUILDDIR = $(OBJ_DIR)/$(TEST_SUBDIR)
 
 SHELL := bash -o pipefail
 
@@ -121,35 +142,53 @@ ifeq ($(MODERN),0)
   LIBPATH := -L ../../tools/agbcc/lib
   LIB := $(LIBPATH) -lgcc -lc -L../../libagbsyscall -lagbsyscall
 else
-  # Note: The makefile must be set up to not call these if modern == 0
-  MODERNCC := $(PREFIX)gcc
-  PATH_MODERNCC := PATH="$(PATH)" $(MODERNCC)
-  CC1 := $(shell $(PATH_MODERNCC) --print-prog-name=cc1) -quiet
-  override CFLAGS += -mthumb -mthumb-interwork -O$(O_LEVEL) -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast
-  LIBPATH := -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libgcc.a))" -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libnosys.a))" -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libc.a))"
-  LIB := $(LIBPATH) -lc -lnosys -lgcc -L../../libagbsyscall -lagbsyscall
+CC1              = $(shell $(PATH_MODERNCC) --print-prog-name=cc1) -quiet
+override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -std=gnu17
+ifeq ($(ANALYZE),1)
+override CFLAGS += -fanalyzer
 endif
-# Enable debug info if set
-ifeq ($(DINFO),1)
-  override CFLAGS += -g
+ROM := $(MODERN_ROM_NAME)
+OBJ_DIR := $(MODERN_OBJ_DIR_NAME)
+LIBPATH := -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libgcc.a))" -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libnosys.a))" -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libc.a))"
+LIB := $(LIBPATH) -lc -lnosys -lgcc -L../../libagbsyscall -lagbsyscall
 endif
 
-# Variable filled out in other make files
-AUTO_GEN_TARGETS :=
-include make_tools.mk
-# Tool executables
-GFX       := $(TOOLS_DIR)/gbagfx/gbagfx$(EXE)
-AIF       := $(TOOLS_DIR)/aif2pcm/aif2pcm$(EXE)
-MID       := $(TOOLS_DIR)/mid2agb/mid2agb$(EXE)
-SCANINC   := $(TOOLS_DIR)/scaninc/scaninc$(EXE)
-PREPROC   := $(TOOLS_DIR)/preproc/preproc$(EXE)
-RAMSCRGEN := $(TOOLS_DIR)/ramscrgen/ramscrgen$(EXE)
-FIX       := $(TOOLS_DIR)/gbafix/gbafix$(EXE)
-MAPJSON   := $(TOOLS_DIR)/mapjson/mapjson$(EXE)
-JSONPROC  := $(TOOLS_DIR)/jsonproc/jsonproc$(EXE)
+ifeq ($(TESTELF),$(MAKECMDGOALS))
+  TEST := 1
+endif
+
+ifeq ($(TEST),1)
+OBJ_DIR := $(TEST_OBJ_DIR_NAME)
+endif
+
+CPPFLAGS := -iquote include -iquote $(GFLIB_SUBDIR) -Wno-trigraphs -DMODERN=$(MODERN) -DTESTING=$(TEST)
+ifneq ($(MODERN),1)
+CPPFLAGS += -I tools/agbcc/include -I tools/agbcc -nostdinc -undef
+endif
+
+LDFLAGS = -Map ../../$(MAP)
+
+SHA1 := $(shell { command -v sha1sum || command -v shasum; } 2>/dev/null) -c
+GFX := tools/gbagfx/gbagfx$(EXE)
+AIF := tools/aif2pcm/aif2pcm$(EXE)
+MID := tools/mid2agb/mid2agb$(EXE)
+SCANINC := tools/scaninc/scaninc$(EXE)
+PREPROC := tools/preproc/preproc$(EXE)
+RAMSCRGEN := tools/ramscrgen/ramscrgen$(EXE)
+FIX := tools/gbafix/gbafix$(EXE)
+MAPJSON := tools/mapjson/mapjson$(EXE)
+JSONPROC := tools/jsonproc/jsonproc$(EXE)
+PATCHELF := tools/patchelf/patchelf$(EXE)
+ROMTEST ?= $(shell { command -v mgba-rom-test || command -v tools/mgba/mgba-rom-test$(EXE); } 2>/dev/null)
+ROMTESTHYDRA := tools/mgba-rom-test-hydra/mgba-rom-test-hydra$(EXE)
 
 PERL := perl
-SHA1 := $(shell { command -v sha1sum || command -v shasum; } 2>/dev/null) -c
+
+# Inclusive list. If you don't want a tool to be built, don't add it here.
+TOOLDIRS := tools/aif2pcm tools/bin2c tools/gbafix tools/gbagfx tools/jsonproc tools/mapjson tools/mid2agb tools/preproc tools/ramscrgen tools/rsfont tools/scaninc
+CHECKTOOLDIRS = tools/patchelf tools/mgba-rom-test-hydra
+TOOLBASE = $(TOOLDIRS:tools/%=%)
+TOOLS = $(foreach tool,$(TOOLBASE),tools/$(tool)/$(tool)$(EXE))
 
 MAKEFLAGS += --no-print-directory
 
@@ -160,21 +199,33 @@ MAKEFLAGS += --no-print-directory
 # Delete files that weren't built properly
 .DELETE_ON_ERROR:
 
-RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidymodern tidynonmodern generated clean-generated
-.PHONY: all rom modern compare
-.PHONY: $(RULES_NO_SCAN)
+# Secondary expansion is required for dependency variables in object rules.
+.SECONDEXPANSION:
+
+.PHONY: all rom clean compare tidy tools check-tools mostlyclean clean-tools clean-check-tools $(TOOLDIRS) $(CHECKTOOLDIRS) libagbsyscall modern tidymodern tidynonmodern check
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
-# Check if we need to scan dependencies based on the chosen rule OR user preference
-NODEP ?= 0
-# Check if we need to pre-build tools and generate assets based on the chosen rule.
-SETUP_PREREQS ?= 1
-# Disable dependency scanning for rules that don't need it.
-ifneq (,$(MAKECMDGOALS))
-  ifeq (,$(filter-out $(RULES_NO_SCAN),$(MAKECMDGOALS)))
-    NODEP := 1
-    SETUP_PREREQS := 0
+# Build tools when building the rom
+# Disable dependency scanning for clean/tidy/tools
+# Use a separate minimal makefile for speed
+# Since we don't need to reload most of this makefile
+ifeq (,$(filter-out all rom compare modern check libagbsyscall syms $(TESTELF),$(MAKECMDGOALS)))
+$(call infoshell, $(MAKE) -f make_tools.mk)
+else
+NODEP ?= 1
+endif
+
+# check if we need to scan dependencies based on the rule
+ifeq (,$(MAKECMDGOALS))
+  SCAN_DEPS ?= 1
+else
+  # clean, tidy, tools, check-tools, mostlyclean, clean-tools, clean-check-tools, $(TOOLDIRS), $(CHECKTOOLDIRS), tidymodern, tidynonmodern, tidycheck don't even build the ROM
+  # libagbsyscall does its own thing
+  ifeq (,$(filter-out clean tidy tools mostlyclean clean-tools $(TOOLDIRS) clean-check-tools $(CHECKTOOLDIRS) tidymodern tidynonmodern tidycheck libagbsyscall,$(MAKECMDGOALS)))
+    SCAN_DEPS ?= 0
+  else
+    SCAN_DEPS ?= 1
   endif
 endif
 
@@ -199,7 +250,15 @@ C_SRCS_IN := $(wildcard $(C_SUBDIR)/*.c $(C_SUBDIR)/*/*.c $(C_SUBDIR)/*/*/*.c)
 C_SRCS := $(foreach src,$(C_SRCS_IN),$(if $(findstring .inc.c,$(src)),,$(src)))
 C_OBJS := $(patsubst $(C_SUBDIR)/%.c,$(C_BUILDDIR)/%.o,$(C_SRCS))
 
-C_ASM_SRCS := $(wildcard $(C_SUBDIR)/*.s $(C_SUBDIR)/*/*.s $(C_SUBDIR)/*/*/*.s)
+TEST_SRCS_IN := $(wildcard $(TEST_SUBDIR)/*.c $(TEST_SUBDIR)/*/*.c $(TEST_SUBDIR)/*/*/*.c)
+TEST_SRCS := $(foreach src,$(TEST_SRCS_IN),$(if $(findstring .inc.c,$(src)),,$(src)))
+TEST_OBJS := $(patsubst $(TEST_SUBDIR)/%.c,$(TEST_BUILDDIR)/%.o,$(TEST_SRCS))
+TEST_OBJS_REL := $(patsubst $(OBJ_DIR)/%,%,$(TEST_OBJS))
+
+GFLIB_SRCS := $(wildcard $(GFLIB_SUBDIR)/*.c)
+GFLIB_OBJS := $(patsubst $(GFLIB_SUBDIR)/%.c,$(GFLIB_BUILDDIR)/%.o,$(GFLIB_SRCS))
+
+C_ASM_SRCS += $(wildcard $(C_SUBDIR)/*.s $(C_SUBDIR)/*/*.s $(C_SUBDIR)/*/*/*.s)
 C_ASM_OBJS := $(patsubst $(C_SUBDIR)/%.s,$(C_BUILDDIR)/%.o,$(C_ASM_SRCS))
 
 ASM_SRCS := $(wildcard $(ASM_SUBDIR)/*.s)
@@ -220,14 +279,25 @@ MID_OBJS := $(patsubst $(MID_SUBDIR)/%.mid,$(MID_BUILDDIR)/%.o,$(MID_SRCS))
 OBJS     := $(C_OBJS) $(C_ASM_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(SONG_OBJS) $(MID_OBJS)
 OBJS_REL := $(patsubst $(OBJ_DIR)/%,%,$(OBJS))
 
-SUBDIRS  := $(sort $(dir $(OBJS)))
+SUBDIRS  := $(sort $(dir $(OBJS) $(dir $(TEST_OBJS))))
 $(shell mkdir -p $(SUBDIRS))
 
-# Pretend rules that are actually flags defer to `make all`
-modern: all
-compare: all
+AUTO_GEN_TARGETS :=
 
-# Other rules
+all: rom
+
+tools: $(TOOLDIRS)
+
+check-tools: $(CHECKTOOLDIRS)
+
+syms: $(SYM)
+
+$(TOOLDIRS):
+	@$(MAKE) -C $@
+
+$(CHECKTOOLDIRS):
+	@$(MAKE) -C $@
+
 rom: $(ROM)
 ifeq ($(COMPARE),1)
 	@$(SHA1) rom.sha1
@@ -235,10 +305,17 @@ endif
 
 syms: $(SYM)
 
-clean: tidy clean-tools clean-generated clean-assets
-	@$(MAKE) clean -C libagbsyscall
+clean: mostlyclean clean-tools clean-check-tools
 
-clean-assets:
+clean-tools:
+	@$(foreach tooldir,$(TOOLDIRS),$(MAKE) clean -C $(tooldir);)
+
+clean-check-tools:
+	@$(foreach tooldir,$(CHECKTOOLDIRS),$(MAKE) clean -C $(tooldir);)
+
+mostlyclean: tidynonmodern tidymodern tidycheck
+	rm -f $(SAMPLE_SUBDIR)/*.bin
+	rm -f $(CRY_SUBDIR)/*.bin
 	rm -f $(MID_SUBDIR)/*.s
 	rm -f $(DATA_ASM_SUBDIR)/layouts/layouts.inc $(DATA_ASM_SUBDIR)/layouts/layouts_table.inc
 	rm -f $(DATA_ASM_SUBDIR)/maps/connections.inc $(DATA_ASM_SUBDIR)/maps/events.inc $(DATA_ASM_SUBDIR)/maps/groups.inc $(DATA_ASM_SUBDIR)/maps/headers.inc
@@ -246,7 +323,7 @@ clean-assets:
 	find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.rl' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
 	find $(DATA_ASM_SUBDIR)/maps \( -iname 'connections.inc' -o -iname 'events.inc' -o -iname 'header.inc' \) -exec rm {} +
 
-tidy: tidynonmodern tidymodern
+tidy: tidynonmodern tidymodern tidycheck
 
 tidynonmodern:
 	rm -f $(ROM_NAME) $(ELF_NAME) $(MAP_NAME)
@@ -256,7 +333,14 @@ tidymodern:
 	rm -f $(MODERN_ROM_NAME) $(MODERN_ELF_NAME) $(MODERN_MAP_NAME)
 	rm -rf $(MODERN_OBJ_DIR_NAME)
 
-# Other rules
+tidycheck:
+	rm -f $(TESTELF) $(HEADLESSELF)
+	rm -rf $(TEST_OBJ_DIR_NAME)
+
+ifneq ($(MODERN),0)
+$(C_BUILDDIR)/berry_crush.o: override CFLAGS += -Wno-address-of-packed-member
+endif
+
 include graphics_file_rules.mk
 include map_data_rules.mk
 include spritesheet_rules.mk
@@ -274,13 +358,17 @@ generated: $(AUTO_GEN_TARGETS)
 %.pal: ;
 %.aif: ;
 
-%.1bpp:   %.png  ; $(GFX) $< $@
-%.4bpp:   %.png  ; $(GFX) $< $@
-%.8bpp:   %.png  ; $(GFX) $< $@
-%.gbapal: %.pal  ; $(GFX) $< $@
-%.gbapal: %.png  ; $(GFX) $< $@
-%.lz:     %      ; $(GFX) $< $@
-%.rl:     %      ; $(GFX) $< $@
+%.1bpp: %.png  ; $(GFX) $< $@
+%.4bpp: %.png  ; $(GFX) $< $@
+%.8bpp: %.png  ; $(GFX) $< $@
+%.gbapal: %.pal ; $(GFX) $< $@
+%.gbapal: %.png ; $(GFX) $< $@
+%.lz: % ; $(GFX) $< $@
+%.rl: % ; $(GFX) $< $@
+
+$(CRY_SUBDIR)/uncomp_%.bin: $(CRY_SUBDIR)/uncomp_%.aif ; $(AIF) $< $@
+$(CRY_SUBDIR)/%.bin: $(CRY_SUBDIR)/%.aif ; $(AIF) $< $@ --compress
+sound/%.bin: sound/%.aif ; $(AIF) $< $@
 
 clean-generated:
 	@rm -f $(AUTO_GEN_TARGETS)
@@ -365,7 +453,14 @@ $(OBJ_DIR)/sym_common.ld: sym_common.txt $(C_OBJS) $(wildcard common_syms/*.txt)
 $(OBJ_DIR)/sym_ewram.ld: sym_ewram.txt
 	$(RAMSCRGEN) ewram_data $< ENGLISH > $@
 
-# Linker script
+# NOTE: Based on C_DEP above, but without NODEP and KEEP_TEMPS handling.
+define TEST_DEP
+$1: $2 $$(shell $(SCANINC) -I include -I tools/agbcc/include -I gflib $2)
+	@echo "$$(CC1) <flags> -o $$@ $$<"
+	@$$(CPP) $$(CPPFLAGS) $$< | $$(PREPROC) $$< charmap.txt -i | $$(CC1) $$(CFLAGS) -o - - | cat - <(echo -e ".text\n\t.align\t2, 0") | $$(AS) $$(ASFLAGS) -o $$@ -
+endef
+$(foreach src, $(TEST_SRCS), $(eval $(call TEST_DEP,$(patsubst $(TEST_SUBDIR)/%.c,$(TEST_BUILDDIR)/%.o,$(src)),$(src),$(patsubst $(TEST_SUBDIR)/%.c,%,$(src)))))
+
 ifeq ($(MODERN),0)
 LD_SCRIPT := ld_script.ld
 LD_SCRIPT_DEPS := $(OBJ_DIR)/sym_bss.ld $(OBJ_DIR)/sym_common.ld $(OBJ_DIR)/sym_ewram.ld
@@ -375,6 +470,28 @@ LD_SCRIPT_DEPS :=
 endif
 
 # Final rules
+
+LD_SCRIPT_TEST := ld_script_test.txt
+
+$(OBJ_DIR)/ld_script_test.ld: $(LD_SCRIPT_TEST) $(LD_SCRIPT_DEPS)
+	cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT_TEST) > ld_script_test.ld
+
+$(TESTELF): $(OBJ_DIR)/ld_script_test.ld $(OBJS) $(TEST_OBJS) libagbsyscall tools check-tools
+	@echo "cd $(OBJ_DIR) && $(LD) -T ld_script_test.ld -o ../../$@ <objects> <test-objects> <lib>"
+	@cd $(OBJ_DIR) && $(LD) $(TESTLDFLAGS) -T ld_script_test.ld -o ../../$@ $(OBJS_REL) $(TEST_OBJS_REL) $(LIB)
+	$(FIX) $@ -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
+	$(PATCHELF) $(TESTELF) gTestRunnerArgv "$(TESTS)\0"
+
+ifeq ($(GITHUB_REPOSITORY_OWNER),rh-hideout)
+TEST_SKIP_IS_FAIL := \x01
+else
+TEST_SKIP_IS_FAIL := \x00
+endif
+
+check: $(TESTELF)
+	@cp $< $(HEADLESSELF)
+	$(PATCHELF) $(HEADLESSELF) gTestRunnerHeadless '\x01' gTestRunnerSkipIsFail "$(TEST_SKIP_IS_FAIL)"
+	$(ROMTESTHYDRA) $(ROMTEST) $(OBJCOPY) $(HEADLESSELF)
 
 libagbsyscall:
 	@$(MAKE) -C libagbsyscall TOOLCHAIN=$(TOOLCHAIN) MODERN=$(MODERN)

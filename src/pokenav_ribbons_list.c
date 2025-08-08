@@ -695,13 +695,13 @@ static void CreateRibbonMonsList(void)
 }
 
 // Buffers the "Nickname gender/level" text for the ribbon mon list
-static void BufferRibbonMonInfoText(struct PokenavListItem *listItem, u8 *dest)
+static void BufferRibbonMonInfoText(struct PokenavListItem * listItem, u8 *dest)
 {
     u8 gender;
     u8 level;
     u8 *s;
     const u8 *genderStr;
-    struct PokenavMonListItem *item = (struct PokenavMonListItem *)listItem;
+    struct PokenavMonListItem * item = (struct PokenavMonListItem *)listItem;
 
     // Mon is in party
     if (item->boxId == TOTAL_BOXES_COUNT)

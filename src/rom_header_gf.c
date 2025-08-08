@@ -8,7 +8,7 @@
 
 // The purpose of this struct is for outside applications to be
 // able to access parts of the ROM or its save file, like a public API.
-// In vanilla, it was used by Colosseum and XD to access Pokémon graphics.
+// In vanilla, it was used by Colosseum and XD to access pokemon graphics.
 //
 // If this struct is rearranged in any way, it defeats the purpose of
 // having it at all. Applications like PKHex or streaming HUDs may find
@@ -20,16 +20,16 @@ struct GFRomHeader
     u32 version;
     u32 language;
     u8 gameName[32];
-    const struct CompressedSpriteSheet *monFrontPics;
-    const struct CompressedSpriteSheet *monBackPics;
-    const struct CompressedSpritePalette *monNormalPalettes;
-    const struct CompressedSpritePalette *monShinyPalettes;
-    const u8 *const *monIcons;
+    const struct CompressedSpriteSheet * monFrontPics;
+    const struct CompressedSpriteSheet * monBackPics;
+    const struct CompressedSpritePalette * monNormalPalettes;
+    const struct CompressedSpritePalette * monShinyPalettes;
+    const u8 *const * monIcons;
     const u8 *monIconPaletteIds;
-    const struct SpritePalette *monIconPalettes;
-    const u8 (*monSpeciesNames)[];
-    const u8 (*moveNames)[];
-    const struct Decoration *decorations;
+    const struct SpritePalette * monIconPalettes;
+    const u8 (* monSpeciesNames)[];
+    const u8 (* moveNames)[];
+    const struct Decoration * decorations;
     u32 flagsOffset;
     u32 varsOffset;
     u32 pokedexOffset;
@@ -69,13 +69,13 @@ struct GFRomHeader
     u32 externalEventFlagsOffset;
     u32 externalEventDataOffset;
     u32 unk18;
-    const struct SpeciesInfo *speciesInfo;
-    const u8 (*abilityNames)[];
-    const u8 *const *abilityDescriptions;
-    const struct Item *items;
-    const struct BattleMove *moves;
-    const struct CompressedSpriteSheet *ballGfx;
-    const struct CompressedSpritePalette *ballPalettes;
+    const struct SpeciesInfo * speciesInfo;
+    const u8 (* abilityNames)[];
+    const u8 *const * abilityDescriptions;
+    const struct Item * items;
+    const struct BattleMove * moves;
+    const struct CompressedSpriteSheet * ballGfx;
+    const struct CompressedSpritePalette * ballPalettes;
     u32 gcnLinkFlagsOffset;
     u32 gameClearFlag;
     u32 ribbonFlag;
@@ -113,8 +113,8 @@ static const struct GFRomHeader sGFRomHeader = {
     .flagsOffset = offsetof(struct SaveBlock1, flags),
     .varsOffset = offsetof(struct SaveBlock1, vars),
     .pokedexOffset = offsetof(struct SaveBlock2, pokedex),
-    .seen1Offset = offsetof(struct SaveBlock1, seen1),
-    .seen2Offset = offsetof(struct SaveBlock1, seen2),
+    .seen1Offset = offsetof(struct SaveBlock1, dexSeen),
+    .seen2Offset = offsetof(struct SaveBlock1, dexSeen), // dex flags are combined, just provide the same pointer
     .pokedexVar = VAR_NATIONAL_DEX - VARS_START,
     .pokedexFlag = FLAG_RECEIVED_POKEDEX_FROM_BIRCH,
     .mysteryEventFlag = FLAG_SYS_MYSTERY_EVENT_ENABLE,

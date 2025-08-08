@@ -176,10 +176,10 @@ void SaveBardSongLyrics(void)
 static void PrepareSongText(void)
 {
     struct MauvilleManBard *bard = &gSaveBlock1Ptr->oldMan.bard;
-    u16 *lyrics = !gSpecialVar_0x8004 ? bard->songLyrics : bard->newSongLyrics;
+    u16 * lyrics = gSpecialVar_0x8004 == 0 ? bard->songLyrics : bard->temporaryLyrics;
     u8 *wordEnd = gStringVar4;
     u8 *str = wordEnd;
-    u16 paragraphNum;
+    u16 lineNum;
 
     // Easy chat "words" aren't strictly single words, e.g. EC_WORD_MATCH_UP is the string "MATCH UP".
     // The bard song needs to know when it's at the end of an easy chat word and not just at a space in

@@ -914,7 +914,7 @@ static const u8 *const sResultsTexts[] =
     [RESULTS_PAGE_POWER + NUM_RESULTS_PAGES]       = gText_PressingPowerRankings,
 };
 
-static u32 (*const sBerryCrushCommands[])(struct BerryCrushGame *game, u8 *data) =
+static u32 (*const sBerryCrushCommands[])(struct BerryCrushGame * game, u8 *data) =
 {
     [CMD_NONE]             = NULL,
     [CMD_FADE]             = Cmd_BeginNormalPaletteFade,

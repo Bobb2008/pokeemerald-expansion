@@ -274,8 +274,7 @@ s32 mini_vpprintf(void *buf, const char *fmt, va_list va)
         {
             len = 1;
             len = _putsAscii(&ch, len, buf);
-        }
-        else
+        } else
         {
             char pad_char = ' ';
             s32 pad_to = 0;
