@@ -600,9 +600,9 @@ struct BattleTestData
 struct BattleTestRunnerState
 {
     u8 battlersCount;
-    u8 parametersCount; // Valid only in BattleTest_Setup.
-    u8 parameters;
-    u8 runParameter;
+    u16 parametersCount; // Valid only in BattleTest_Setup.
+    u16 parameters;
+    u16 runParameter;
     u16 rngTag;
     u16 rngTrialOffset;
     u16 trials;
@@ -626,7 +626,7 @@ struct BattleTestRunnerState
 };
 
 extern const struct TestRunner gBattleTestRunner;
-extern struct BattleTestRunnerState *gBattleTestRunnerState;
+extern struct BattleTestRunnerState *const gBattleTestRunnerState;
 
 #define MEMBERS(...) VARARG_8(MEMBERS_, __VA_ARGS__)
 #define MEMBERS_0()
