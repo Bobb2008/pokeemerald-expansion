@@ -52,12 +52,12 @@ TITLE       := POKEMON EMER
 GAME_CODE   := BPEE
 MAKER_CODE  := 01
 REVISION    := 0
-MODERN      ?= 0
+MODERN      ?= 1
 TEST        ?= 0
 ANALYZE     ?= 0
 
-ifeq (modern,$(MAKECMDGOALS))
-  MODERN := 1
+ifeq (agbcc,$(MAKECMDGOALS))
+  MODERN := 0
 endif
 
 ifeq (check,$(MAKECMDGOALS))
@@ -81,13 +81,12 @@ else
   CPP := $(PREFIX)cpp
 endif
 
-ROM_NAME := $(FILE_NAME).gba
-OBJ_DIR_NAME := $(BUILD_DIR)/emerald
-MODERN_ROM_NAME := $(FILE_NAME)_modern.gba
-MODERN_OBJ_DIR_NAME := $(BUILD_DIR)/modern
-
+ROM_NAME := pokeemerald_agbcc.gba
 ELF_NAME := $(ROM_NAME:.gba=.elf)
 MAP_NAME := $(ROM_NAME:.gba=.map)
+OBJ_DIR_NAME := build/emerald
+
+MODERN_ROM_NAME := pokeemerald.gba
 MODERN_ELF_NAME := $(MODERN_ROM_NAME:.gba=.elf)
 MODERN_MAP_NAME := $(MODERN_ROM_NAME:.gba=.map)
 
@@ -147,7 +146,7 @@ ifeq ($(MODERN),0)
   LIB := $(LIBPATH) -lgcc -lc -L../../libagbsyscall -lagbsyscall
 else
 CC1              = $(shell $(PATH_MODERNCC) --print-prog-name=cc1) -quiet
-override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -std=gnu17
+override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -std=gnu17 -Werror -Wall -Wno-strict-aliasing -Wno-attribute-alias -Woverride-init
 ifeq ($(ANALYZE),1)
 override CFLAGS += -fanalyzer
 endif
@@ -206,7 +205,7 @@ MAKEFLAGS += --no-print-directory
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean compare tidy tools check-tools mostlyclean clean-tools clean-check-tools $(TOOLDIRS) $(CHECKTOOLDIRS) libagbsyscall modern tidymodern tidynonmodern check
+.PHONY: all rom clean compare tidy tools check-tools mostlyclean clean-tools clean-check-tools $(TOOLDIRS) $(CHECKTOOLDIRS) libagbsyscall agbcc modern tidymodern tidynonmodern check
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
@@ -214,7 +213,7 @@ infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst 
 # Disable dependency scanning for clean/tidy/tools
 # Use a separate minimal makefile for speed
 # Since we don't need to reload most of this makefile
-ifeq (,$(filter-out all rom compare modern check libagbsyscall syms $(TESTELF),$(MAKECMDGOALS)))
+ifeq (,$(filter-out all rom compare agbcc modern check libagbsyscall syms $(TESTELF),$(MAKECMDGOALS)))
 $(call infoshell, $(MAKE) -f make_tools.mk)
 else
 NODEP ?= 1
@@ -318,8 +317,7 @@ clean-check-tools:
 	@$(foreach tooldir,$(CHECKTOOLDIRS),$(MAKE) clean -C $(tooldir);)
 
 mostlyclean: tidynonmodern tidymodern tidycheck
-	rm -f $(SAMPLE_SUBDIR)/*.bin
-	rm -f $(CRY_SUBDIR)/*.bin
+	find sound -iname '*.bin' -exec rm {} +
 	rm -f $(MID_SUBDIR)/*.s
 	rm -f $(DATA_ASM_SUBDIR)/layouts/layouts.inc $(DATA_ASM_SUBDIR)/layouts/layouts_table.inc
 	rm -f $(DATA_ASM_SUBDIR)/maps/connections.inc $(DATA_ASM_SUBDIR)/maps/events.inc $(DATA_ASM_SUBDIR)/maps/groups.inc $(DATA_ASM_SUBDIR)/maps/headers.inc
@@ -391,7 +389,7 @@ $(C_BUILDDIR)/librfu_intr.o: CC1 := $(TOOLS_DIR)/agbcc/bin/agbcc_arm$(EXE)
 $(C_BUILDDIR)/librfu_intr.o: CFLAGS := -O2 -mthumb-interwork -quiet
 else
 $(C_BUILDDIR)/librfu_intr.o: CFLAGS := -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast
-$(C_BUILDDIR)/berry_crush.o: override CFLAGS += -Wno-address-of-packed-member
+$(C_BUILDDIR)/pokedex_plus_hgss.o: CFLAGS := -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -Wno-pointer-to-int-cast -std=gnu17 -Werror -Wall -Wno-strict-aliasing -Wno-attribute-alias -Woverride-init
 endif
 
 # Dependency rules (for the *.c & *.s sources to .o files)
@@ -473,9 +471,24 @@ LD_SCRIPT := ld_script_modern.ld
 LD_SCRIPT_DEPS :=
 endif
 
-# Final rules
+$(OBJ_DIR)/ld_script.ld: $(LD_SCRIPT) $(LD_SCRIPT_DEPS)
+	cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT) > ld_script.ld
 
-LD_SCRIPT_TEST := ld_script_test.txt
+LDFLAGS = -Map ../../$(MAP)
+$(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) libagbsyscall
+	@echo "cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../../$@ <objects> <lib>"
+	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld --print-memory-usage -o ../../$@ $(OBJS_REL) $(LIB) | cat
+	$(FIX) $@ -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
+
+$(ROM): $(ELF)
+	$(OBJCOPY) -O binary $< $@
+	$(FIX) $@ -p --silent
+
+agbcc: all
+
+modern: all
+
+LD_SCRIPT_TEST := ld_script_test.ld
 
 $(OBJ_DIR)/ld_script_test.ld: $(LD_SCRIPT_TEST) $(LD_SCRIPT_DEPS)
 	cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT_TEST) > ld_script_test.ld

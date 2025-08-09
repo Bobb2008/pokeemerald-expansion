@@ -4,28 +4,20 @@ gNumMusicPlayers = 4;
 gMaxLines = 0;
 gInitialMainCB2 = CB2_InitCopyrightScreenAfterBootup;
 
-SECTIONS {
-    . = 0x2000000;
-
-    ewram (NOLOAD) :
-    ALIGN(4)
-    {
-        gHeap = .;
-
-        . = 0x1C000;
-
-        src/*.o(ewram_data);
-        gflib/*.o(ewram_data);
-
-        . = 0x40000;
-    }
+MEMORY
+{
+    EWRAM (rwx) : ORIGIN = 0x2000000, LENGTH = 256K
+    IWRAM (rwx) : ORIGIN = 0x3000000, LENGTH = 32K
+    ROM    (rx) : ORIGIN = 0x8000000, LENGTH = 32M
+}
 
 SECTIONS {
-
     ewram 0x2000000 (NOLOAD) :
     ALIGN(4)
     {
         src/*.o(ewram_data);
+        gflib/*.o(ewram_data);
+
     } > EWRAM
 
     iwram 0x3000000 (NOLOAD) :
@@ -52,6 +44,7 @@ SECTIONS {
     {
         src/rom_header.o(.text*);
         src/rom_header_gf.o(.text.*);
+        src/rom_header_rhh.o(.text.*);
         src/crt0.o(.text);
         src/main.o(.text);
         src/*.o(.text*);
@@ -113,7 +106,7 @@ SECTIONS {
         *libc.a:*.o(.rodata*);
         *libc.a:*.o(.data*);
         src/libisagbprn.o(.rodata);
-    } =0
+    } > ROM =0
 
     multiboot_data :
     ALIGN(4)
@@ -128,6 +121,8 @@ SECTIONS {
     {
         src/graphics.o(.rodata);
     } > ROM =0
+
+    __rom_end = .;
 
     /* DWARF debug sections.
        Symbols in the DWARF debugging sections are relative to the beginning

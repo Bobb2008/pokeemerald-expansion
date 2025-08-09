@@ -4,6 +4,13 @@ gNumMusicPlayers = 4;
 gMaxLines = 0;
 gInitialMainCB2 = CB2_InitCopyrightScreenAfterBootup;
 
+MEMORY
+{
+    EWRAM (rwx) : ORIGIN = 0x2000000, LENGTH = 256K
+    IWRAM (rwx) : ORIGIN = 0x3000000, LENGTH = 32K
+    ROM    (rx) : ORIGIN = 0x8000000, LENGTH = 32M
+}
+
 SECTIONS {
 
     ewram 0x2000000 (NOLOAD) :
@@ -42,6 +49,7 @@ SECTIONS {
     {
         src/rom_header.o(.text);
         src/rom_header_gf.o(.text.*);
+        src/rom_header_rhh.o(.text.*);
         src/crt0.o(.text);
         src/main.o(.text);
         src/malloc.o(.text);
@@ -334,7 +342,7 @@ SECTIONS {
         src/international_string_util.o(.text);
         src/pokemon_debug.o(.text);
         src/expansion_intro.o(.text);
-    } =0
+    } > ROM =0
 
     script_data :
     ALIGN(4)
@@ -701,7 +709,7 @@ SECTIONS {
         data/sound_data.o(.rodata);
         src/pokemon_debug.o(.rodata);
         src/expansion_intro.o(.rodata);
-    } =0
+    } > ROM =0
 
     song_data :
     ALIGN(4)
@@ -1299,7 +1307,7 @@ SECTIONS {
         data/multiboot_pokemon_colosseum.o(.rodata);
     } > ROM =0
 
-    gfx_data  :
+    gfx_data :
     ALIGN(4)
     {
         src/graphics.o(.rodata);
@@ -1312,6 +1320,8 @@ SECTIONS {
         src/*.o(.rodata);
         data/*.o(.rodata);
     } > ROM = 0
+
+    __rom_end = .;
 
     /* DWARF debug sections.
        Symbols in the DWARF debugging sections are relative to the beginning

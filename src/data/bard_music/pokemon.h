@@ -2884,10 +2884,10 @@ static const struct BardSoundTemplate sBardSoundTemplates_Pokemon[NUM_SPECIES][M
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
-    [SPECIES_CASTFORM] = {
-        { .songId = PHONEME_ID(PH_TRAP_BLEND) },
-        { .songId = PHONEME_ID(PH_GOAT_SOLO) },
-        PREV_BARD_SOUND,
+    [SPECIES_CASTFORM_NORMAL] = {
+        { .songLengthId =  0 },
+        { .songLengthId = 26 },
+        { .songLengthId = 51 },
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
@@ -3084,11 +3084,11 @@ static const struct BardSoundTemplate sBardSoundTemplates_Pokemon[NUM_SPECIES][M
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
-    [SPECIES_DEOXYS] = {
-        { .songId = PHONEME_ID(PH_FLEECE_BLEND) },
-        { .songId = PHONEME_ID(PH_THOUGHT_BLEND) },
-        { .songId = PHONEME_ID(PH_KIT_SOLO) },
-        PREV_BARD_SOUND,
+    [SPECIES_DEOXYS_NORMAL] = {
+        { .songLengthId = 12 },
+        { .songLengthId = 27 },
+        { .songLengthId = 17 },
+        { .songLengthId = 51 },
         NULL_BARD_SOUND,
         NULL_BARD_SOUND,
     },
