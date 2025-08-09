@@ -103,10 +103,13 @@ ELF := $(ROM:.gba=.elf)
 MAP := $(ROM:.gba=.map)
 SYM := $(ROM:.gba=.sym)
 
+TEST_OBJ_DIR_NAME_MODERN := build/modern-test
+TEST_OBJ_DIR_NAME_AGBCC := build/test
+
 ifeq ($(MODERN),0)
-TEST_OBJ_DIR_NAME := build/test
+TEST_OBJ_DIR_NAME := $(TEST_OBJ_DIR_NAME_AGBCC)
 else
-TEST_OBJ_DIR_NAME := build/modern-test
+TEST_OBJ_DIR_NAME := $(TEST_OBJ_DIR_NAME_MODERN)
 endif
 TESTELF = $(ROM:.gba=-test.elf)
 HEADLESSELF = $(ROM:.gba=-test-headless.elf)
@@ -212,7 +215,7 @@ MAKEFLAGS += --no-print-directory
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean compare tidy tools check-tools mostlyclean clean-tools clean-check-tools $(TOOLDIRS) $(CHECKTOOLDIRS) libagbsyscall agbcc modern tidymodern tidynonmodern check
+.PHONY: all rom clean compare tidy tools check-tools mostlyclean clean-tools clean-check-tools $(TOOLDIRS) $(CHECKTOOLDIRS) libagbsyscall agbcc modern tidymodern tidynonmodern check history
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
@@ -294,7 +297,10 @@ $(shell mkdir -p $(SUBDIRS))
 
 AUTO_GEN_TARGETS :=
 
-all: rom
+all: history rom
+
+history:
+	@bash ./check_history.sh
 
 tools: $(TOOLDIRS)
 
@@ -344,7 +350,9 @@ tidymodern:
 
 tidycheck:
 	rm -f $(TESTELF) $(HEADLESSELF)
-	rm -rf $(TEST_OBJ_DIR_NAME)
+	rm -rf $(TEST_OBJ_DIR_NAME_MODERN)
+	rm -rf $(TEST_OBJ_DIR_NAME_AGBCC)
+
 
 ifneq ($(MODERN),0)
 $(C_BUILDDIR)/berry_crush.o: override CFLAGS += -Wno-address-of-packed-member
@@ -470,7 +478,7 @@ $(DATA_SRC_SUBDIR)/pokemon/teachable_learnsets.h: $(DATA_ASM_BUILDDIR)/event_scr
 define TEST_DEP
 $1: $2 $$(shell $(SCANINC) -I include -I tools/agbcc/include -I gflib $2)
 	@echo "$$(CC1) <flags> -o $$@ $$<"
-	@$$(CPP) $$(CPPFLAGS) $$< | $$(PREPROC) $$< charmap.txt -i | $$(CC1) $$(CFLAGS) -o - - | cat - <(echo -e ".text\n\t.align\t2, 0") | $$(AS) $$(ASFLAGS) -o $$@ -
+	@$$(CPP) $$(CPPFLAGS) $$< | $$(PREPROC) -i $$< charmap.txt | $$(CC1) $$(CFLAGS) -o - - | cat - <(echo -e ".text\n\t.align\t2, 0") | $$(AS) $$(ASFLAGS) -o $$@ -
 endef
 $(foreach src, $(TEST_SRCS), $(eval $(call TEST_DEP,$(patsubst $(TEST_SUBDIR)/%.c,$(TEST_BUILDDIR)/%.o,$(src)),$(src),$(patsubst $(TEST_SUBDIR)/%.c,%,$(src)))))
 

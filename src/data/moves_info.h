@@ -132,6 +132,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .metronomeBanned = TRUE,
         .mirrorMoveBanned = TRUE,
         .sketchBanned = TRUE,
+        .assistBanned = TRUE,
     },
 
     [MOVE_POUND] =
@@ -4435,7 +4436,11 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .name = COMPOUND_STRING("Powder Snow"),
         .description = COMPOUND_STRING(
             "Blasts the foe with a snowy\n"
+        #if B_USE_FROSTBITE == TRUE
+            "gust. May cause frostbite."),
+        #else
             "gust. May cause freezing."),
+        #endif
         .effect = EFFECT_HIT,
         .power = 40,
         .type = TYPE_ICE,
@@ -6324,6 +6329,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .category = DAMAGE_CATEGORY_STATUS,
         .zMove = { .effect = Z_EFFECT_DEF_UP_1 },
         .magicCoatAffected = B_UPDATED_MOVE_FLAGS >= GEN_5,
+        .ignoresSubstitute = TRUE,
         .contestEffect = CONTEST_EFFECT_MAKE_FOLLOWING_MONS_NERVOUS,
         .contestCategory = CONTEST_CATEGORY_TOUGH,
         .contestComboStarterId = 0,
@@ -6354,7 +6360,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
 
     [MOVE_WILL_O_WISP] =
     {
-        .name = COMPOUND_STRING("Will-o-Wisp"),
+        .name = COMPOUND_STRING("Will-O-Wisp"),
         .description = COMPOUND_STRING(
             "Inflicts a burn on the foe\n"
             "with intense fire."),
@@ -10166,7 +10172,11 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .name = COMPOUND_STRING("Ice Fang"),
         .description = COMPOUND_STRING(
             "May cause flinching or\n"
+        #if B_USE_FROSTBITE == TRUE
             "leave the foe frozen."),
+        #else
+            "leave the foe with frostbite."),
+        #endif
         .effect = EFFECT_HIT,
         .power = 65,
         .type = TYPE_ICE,
@@ -10402,7 +10412,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .priority = 0,
         .category = DAMAGE_CATEGORY_STATUS,
         .zMove = { .effect = Z_EFFECT_ACC_UP_1 },
-        //.ignoresSubstitute = TRUE,
+        .ignoresSubstitute = B_UPDATED_MOVE_FLAGS == GEN_4,
         .magicCoatAffected = B_UPDATED_MOVE_FLAGS >= GEN_5,
         .contestEffect = CONTEST_EFFECT_WORSEN_CONDITION_OF_PREV_MONS,
         .contestCategory = CONTEST_CATEGORY_BEAUTY,
@@ -12495,7 +12505,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .description = COMPOUND_STRING(
             "Stomps down on the ground.\n"
             "Lowers Speed."),
-        .effect = EFFECT_BULLDOZE,
+        .effect = EFFECT_EARTHQUAKE,
         .power = 60,
         .type = TYPE_GROUND,
         .accuracy = 100,
@@ -13679,7 +13689,11 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .name = COMPOUND_STRING("Freeze-Dry"),
         .description = COMPOUND_STRING(
             "Super effective on Water-\n"
+        #if B_USE_FROSTBITE == TRUE
+            "types. May cause frostbite."),
+        #else
             "types. May cause freezing."),
+        #endif
         .effect = EFFECT_FREEZE_DRY,
         .power = 70,
         .type = TYPE_ICE,
@@ -14101,6 +14115,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .description = COMPOUND_STRING(
             "Whips up a storm of\n"
             "diamonds. May up Defense."),
+        .effect = EFFECT_HIT,
         .power = 100,
         .type = TYPE_ROCK,
         .accuracy = 95,
@@ -14111,6 +14126,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .metronomeBanned = TRUE,
         .additionalEffects = ADDITIONAL_EFFECTS({
             .moveEffect = B_UPDATED_MOVE_DATA >= GEN_7 ? MOVE_EFFECT_DEF_PLUS_2:  MOVE_EFFECT_DEF_PLUS_1,
+            .self = TRUE,
             .chance = 50,
         }),
         .contestEffect = CONTEST_EFFECT_USER_MORE_EASILY_STARTLED,
@@ -14324,6 +14340,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .zMove = { .effect = Z_EFFECT_SPDEF_UP_2 },
         .powderMove = TRUE,
         .magicCoatAffected = TRUE,
+        .ignoresSubstitute = TRUE,
         .contestEffect = CONTEST_EFFECT_DONT_EXCITE_AUDIENCE,
         .contestCategory = CONTEST_CATEGORY_SMART,
         .contestComboStarterId = 0,
@@ -15001,7 +15018,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
 
     [MOVE_FLORAL_HEALING] =
     {
-        .name = HANDLE_EXPANDED_MOVE_NAME("FloralHealng", "Floral Healng"),
+        .name = HANDLE_EXPANDED_MOVE_NAME("FloralHealng", "Floral Healing"),
         .description = COMPOUND_STRING(
             "Restores an ally's HP.\n"
             "Heals more on grass."),
@@ -17334,7 +17351,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .description = COMPOUND_STRING(
             "Deals better of physical and\n"
             "special damage. May poison."),
-        .effect = EFFECT_SHELL_SIDE_ARM,
+        .effect = EFFECT_HIT, // The effect is hardcoded to the move since SetShellSideArmCategory() can't be used with anything but Shell Side Arm because of the BP requirement
         .power = 90,
         .type = TYPE_POISON,
         .accuracy = 100,
@@ -17662,7 +17679,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
 
     [MOVE_JUNGLE_HEALING] =
     {
-        .name = HANDLE_EXPANDED_MOVE_NAME("JungleHealng", "Jungle Healng"),
+        .name = HANDLE_EXPANDED_MOVE_NAME("JungleHealng", "Jungle Healing"),
         .description = COMPOUND_STRING(
             "Heals HP and status of\n"
             "itself and allies in battle."),
@@ -18217,7 +18234,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .name = HANDLE_EXPANDED_MOVE_NAME("BitterMalice", "Bitter Malice"),
         .description = COMPOUND_STRING(
             "A spine-chilling resentment.\n"
-            "May lower the foe's Attack."),
+            "Lowers the foe's Attack."),
         .effect = EFFECT_HIT,
         .power = B_UPDATED_MOVE_DATA >= GEN_9 ? 75 : 60,
         .type = TYPE_GHOST,
@@ -18709,7 +18726,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .name = COMPOUND_STRING("Mortal Spin"),
         .description = COMPOUND_STRING(
             "Erases trap moves and Leech\n"
-            "Seed. Poisons adjecent foes."),
+            "Seed. Poisons adjacent foes."),
         .effect = EFFECT_HIT,
         .power = 30,
         .type = TYPE_POISON,
@@ -20148,7 +20165,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
     },
     [MOVE_OCEANIC_OPERETTA] =
     {
-        .name = COMPOUND_STRING("Oceaning Operetta"),
+        .name = COMPOUND_STRING("Oceanic Operetta"),
         .description = sNullDescription,
         .effect = EFFECT_HIT,
         .power = 195,
@@ -20231,6 +20248,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .target = MOVE_TARGET_SELECTED,
         .priority = 0,
         .category = DAMAGE_CATEGORY_PHYSICAL,
+        .ignoresTargetAbility = TRUE,
     },
     [MOVE_MENACING_MOONRAZE_MAELSTROM] =
     {
@@ -20244,6 +20262,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .target = MOVE_TARGET_SELECTED,
         .priority = 0,
         .category = DAMAGE_CATEGORY_SPECIAL,
+        .ignoresTargetAbility = TRUE,
     },
     [MOVE_LIGHT_THAT_BURNS_THE_SKY] =
     {
@@ -20257,6 +20276,7 @@ const struct MoveInfo gMovesInfo[MOVES_COUNT_DYNAMAX] =
         .target = MOVE_TARGET_SELECTED,
         .priority = 0,
         .category = DAMAGE_CATEGORY_SPECIAL,
+        .ignoresTargetAbility = TRUE,
     },
     [MOVE_SOUL_STEALING_7_STAR_STRIKE] =
     {

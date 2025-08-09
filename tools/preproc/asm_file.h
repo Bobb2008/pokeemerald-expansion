@@ -31,7 +31,7 @@ enum class Directive
     Include,
     String,
     Braille,
-    FixedString,
+    Enum,
     Unknown
 };
 
