@@ -181,9 +181,9 @@ static void InitSinglePlayerBtlControllers(void)
         if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToSafari;
         else if (gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL)
-            gBattlerControllerFuncs[0] = SetControllerToWally;
+            gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToWally;
         else if (IsAiVsAiBattle())
-            gBattlerControllerFuncs[0] = SetControllerToPlayerPartner;
+            gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayerPartner;
         else
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayer;
 
@@ -236,19 +236,19 @@ static void InitSinglePlayerBtlControllers(void)
         gBattleMainFunc = BeginBattleIntro;
 
         if (IsAiVsAiBattle())
-            gBattlerControllerFuncs[0] = SetControllerToPlayerPartner;
+            gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayerPartner;
         else
-            gBattlerControllerFuncs[0] = SetControllerToPlayer;
-        gBattlerPositions[0] = B_POSITION_PLAYER_LEFT;
+            gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayer;
+        gBattlerPositions[B_BATTLER_0] = B_POSITION_PLAYER_LEFT;
 
         gBattlerControllerFuncs[B_BATTLER_1] = SetControllerToOpponent;
         gBattlerPositions[B_BATTLER_1] = B_POSITION_OPPONENT_LEFT;
 
         if (IsAiVsAiBattle())
-            gBattlerControllerFuncs[2] = SetControllerToPlayerPartner;
+            gBattlerControllerFuncs[B_BATTLER_2] = SetControllerToPlayerPartner;
         else
-            gBattlerControllerFuncs[2] = SetControllerToPlayer;
-        gBattlerPositions[2] = B_POSITION_PLAYER_RIGHT;
+            gBattlerControllerFuncs[B_BATTLER_2] = SetControllerToPlayer;
+        gBattlerPositions[B_BATTLER_2] = B_POSITION_PLAYER_RIGHT;
 
         gBattlerControllerFuncs[B_BATTLER_3] = SetControllerToOpponent;
         gBattlerPositions[B_BATTLER_3] = B_POSITION_OPPONENT_RIGHT;
@@ -732,10 +732,10 @@ static void CreateTasksForSendRecvLinkBuffers(void)
     gTasks[sLinkSendTaskId].tCurrentBlock_Start    = 0;
 
     sLinkReceiveTaskId = CreateTask(Task_HandleCopyReceivedLinkBuffersData, 0);
-    gTasks[sLinkReceiveTaskId].data[12] = 0;
-    gTasks[sLinkReceiveTaskId].data[13] = 0;
-    gTasks[sLinkReceiveTaskId].data[14] = 0;
-    gTasks[sLinkReceiveTaskId].data[15] = 0;
+    gTasks[sLinkReceiveTaskId].tCurrentBlock_WrapFrom = 0;
+    gTasks[sLinkReceiveTaskId].tBlockSendDelayTimer   = 0; // not used by "receive" task
+    gTasks[sLinkReceiveTaskId].tCurrentBlock_End      = 0;
+    gTasks[sLinkReceiveTaskId].tCurrentBlock_Start    = 0;
 }
 
 enum
@@ -751,6 +751,8 @@ enum
     LINK_BUFF_DATA,
 };
 
+// We want to send a message. Place it into the "send" buffer.
+// First argument is a BATTLELINKCOMMTYPE_
 void PrepareBufferDataTransferLink(u32 battler, u32 bufferId, u16 size, u8 *data)
 {
     s32 alignedSize;
@@ -762,14 +764,18 @@ void PrepareBufferDataTransferLink(u32 battler, u32 bufferId, u16 size, u8 *data
         gTasks[sLinkSendTaskId].tCurrentBlock_WrapFrom = gTasks[sLinkSendTaskId].tCurrentBlock_End;
         gTasks[sLinkSendTaskId].tCurrentBlock_End      = 0;
     }
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_BUFFER_ID] = bufferId;
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_ACTIVE_BATTLER] = battler;
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_ATTACKER] = gBattlerAttacker;
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_TARGET] = gBattlerTarget;
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_SIZE_LO] = alignedSize;
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_SIZE_HI] = (alignedSize & 0x0000FF00) >> 8;
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_ABSENT_BATTLER_FLAGS] = gAbsentBattlerFlags;
-    gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].data[14] + LINK_BUFF_EFFECT_BATTLER] = gEffectBattler;
+
+    #define BYTE_TO_SEND(offset) \
+        gLinkBattleSendBuffer[gTasks[sLinkSendTaskId].tCurrentBlock_End + offset]
+
+    BYTE_TO_SEND(LINK_BUFF_BUFFER_ID)            = bufferId;
+    BYTE_TO_SEND(LINK_BUFF_ACTIVE_BATTLER)       = battler;
+    BYTE_TO_SEND(LINK_BUFF_ATTACKER)             = gBattlerAttacker;
+    BYTE_TO_SEND(LINK_BUFF_TARGET)               = gBattlerTarget;
+    BYTE_TO_SEND(LINK_BUFF_SIZE_LO)              = alignedSize;
+    BYTE_TO_SEND(LINK_BUFF_SIZE_HI)              = (alignedSize & 0x0000FF00) >> 8;
+    BYTE_TO_SEND(LINK_BUFF_ABSENT_BATTLER_FLAGS) = gAbsentBattlerFlags;
+    BYTE_TO_SEND(LINK_BUFF_EFFECT_BATTLER)       = gEffectBattler;
 
     for (i = 0; i < size; i++)
         BYTE_TO_SEND(LINK_BUFF_DATA + i) = data[i];
@@ -926,7 +932,7 @@ static void Task_HandleCopyReceivedLinkBuffersData(u8 taskId)
 {
     u16 blockSize;
     u8 battler;
-    u8 var;
+    u8 playerId;
 
     #define BYTE_TO_RECEIVE(offset) \
         gLinkBattleRecvBuffer[gTasks[taskId].tCurrentBlock_Start + offset]
@@ -939,16 +945,16 @@ static void Task_HandleCopyReceivedLinkBuffersData(u8 taskId)
             gTasks[taskId].tCurrentBlock_WrapFrom = 0;
             gTasks[taskId].tCurrentBlock_Start    = 0;
         }
-        battler = gLinkBattleRecvBuffer[gTasks[taskId].data[15] + LINK_BUFF_ACTIVE_BATTLER];
-        blockSize = gLinkBattleRecvBuffer[gTasks[taskId].data[15] + LINK_BUFF_SIZE_LO] | (gLinkBattleRecvBuffer[gTasks[taskId].data[15] + LINK_BUFF_SIZE_HI] << 8);
+        battler = BYTE_TO_RECEIVE(LINK_BUFF_ACTIVE_BATTLER);
+        blockSize = BYTE_TO_RECEIVE(LINK_BUFF_SIZE_LO) | (BYTE_TO_RECEIVE(LINK_BUFF_SIZE_HI) << 8);
 
         switch (BYTE_TO_RECEIVE(0))
         {
-        case 0:
-            if (gBattleControllerExecFlags & (1u << battler))
+        case B_COMM_TO_CONTROLLER:
+            if (IS_BATTLE_CONTROLLER_ACTIVE_ON_LOCAL(battler))
                 return;
 
-            memcpy(gBattleResources->bufferA[battler], &gLinkBattleRecvBuffer[gTasks[taskId].data[15] + LINK_BUFF_DATA], blockSize);
+            memcpy(gBattleResources->bufferA[battler], &BYTE_TO_RECEIVE(LINK_BUFF_DATA), blockSize);
             MarkBattlerReceivedLinkData(battler);
 
             if (!(gBattleTypeFlags & BATTLE_TYPE_IS_MASTER))
@@ -959,12 +965,12 @@ static void Task_HandleCopyReceivedLinkBuffersData(u8 taskId)
                 gEffectBattler      = BYTE_TO_RECEIVE(LINK_BUFF_EFFECT_BATTLER);
             }
             break;
-        case 1:
-            memcpy(gBattleResources->bufferB[battler], &gLinkBattleRecvBuffer[gTasks[taskId].data[15] + LINK_BUFF_DATA], blockSize);
+        case B_COMM_TO_ENGINE:
+            memcpy(gBattleResources->bufferB[battler], &gLinkBattleRecvBuffer[gTasks[taskId].tCurrentBlock_Start + LINK_BUFF_DATA], blockSize);
             break;
-        case 2:
-            var = gLinkBattleRecvBuffer[gTasks[taskId].data[15] + LINK_BUFF_DATA];
-            gBattleControllerExecFlags &= ~(1u << (battler + var * 4));
+        case B_COMM_CONTROLLER_IS_DONE:
+            playerId = BYTE_TO_RECEIVE(LINK_BUFF_DATA);
+            MARK_BATTLE_CONTROLLER_IDLE_FOR_PLAYER(battler, playerId);
             break;
         }
 
@@ -973,6 +979,13 @@ static void Task_HandleCopyReceivedLinkBuffersData(u8 taskId)
 
     #undef BYTE_TO_RECEIVE
 }
+
+#undef tInitialDelayTimer
+#undef tState
+#undef tCurrentBlock_WrapFrom
+#undef tBlockSendDelayTimer
+#undef tCurrentBlock_End
+#undef tCurrentBlock_Start
 
 void BtlController_EmitGetMonData(u32 battler, u32 bufferId, u8 requestId, u8 monToCheck)
 {
@@ -1143,15 +1156,15 @@ void BtlController_EmitMoveAnimation(u32 battler, u32 bufferId, u16 move, u8 tur
     PrepareBufferDataTransfer(battler, bufferId, gBattleResources->transferBuffer, 16 + sizeof(struct DisableStruct));
 }
 
-void BtlController_EmitPrintString(u32 battler, u32 bufferId, u16 stringID)
+void BtlController_EmitPrintString(u32 battler, u32 bufferId, u16 stringId)
 {
     s32 i;
     struct BattleMsgData *stringInfo;
 
     gBattleResources->transferBuffer[0] = CONTROLLER_PRINTSTRING;
     gBattleResources->transferBuffer[1] = gBattleOutcome;
-    gBattleResources->transferBuffer[2] = stringID;
-    gBattleResources->transferBuffer[3] = (stringID & 0xFF00) >> 8;
+    gBattleResources->transferBuffer[2] = stringId;
+    gBattleResources->transferBuffer[3] = (stringId & 0xFF00) >> 8;
 
     stringInfo = (struct BattleMsgData *)(&gBattleResources->transferBuffer[4]);
     stringInfo->currentMove = gCurrentMove;
@@ -1175,15 +1188,15 @@ void BtlController_EmitPrintString(u32 battler, u32 bufferId, u16 stringID)
     PrepareBufferDataTransfer(battler, bufferId, gBattleResources->transferBuffer, sizeof(struct BattleMsgData) + 4);
 }
 
-void BtlController_EmitPrintSelectionString(u32 battler, u32 bufferId, u16 stringID)
+void BtlController_EmitPrintSelectionString(u32 battler, u32 bufferId, u16 stringId)
 {
     s32 i;
     struct BattleMsgData *stringInfo;
 
     gBattleResources->transferBuffer[0] = CONTROLLER_PRINTSTRINGPLAYERONLY;
     gBattleResources->transferBuffer[1] = CONTROLLER_PRINTSTRINGPLAYERONLY;
-    gBattleResources->transferBuffer[2] = stringID;
-    gBattleResources->transferBuffer[3] = (stringID & 0xFF00) >> 8;
+    gBattleResources->transferBuffer[2] = stringId;
+    gBattleResources->transferBuffer[3] = (stringId & 0xFF00) >> 8;
 
     stringInfo = (struct BattleMsgData *)(&gBattleResources->transferBuffer[4]);
     stringInfo->currentMove = gCurrentMove;
@@ -1481,7 +1494,7 @@ void BtlController_EmitIntroTrainerBallThrow(u32 battler, u32 bufferId)
     PrepareBufferDataTransfer(battler, bufferId, gBattleResources->transferBuffer, 4);
 }
 
-void BtlController_EmitDrawPartyStatusSummary(u32 battler, u32 bufferId, struct HpAndStatus* hpAndStatus, u8 flags)
+void BtlController_EmitDrawPartyStatusSummary(u32 battler, u32 bufferId, struct HpAndStatus *hpAndStatus, u8 flags)
 {
     s32 i;
 
@@ -1521,7 +1534,7 @@ void BtlController_EmitSpriteInvisibility(u32 battler, u32 bufferId, bool8 isInv
     PrepareBufferDataTransfer(battler, bufferId, gBattleResources->transferBuffer, 4);
 }
 
-void BtlController_EmitBattleAnimation(u32 battler, u32 bufferId, u8 animationId, struct DisableStruct* disableStructPtr, u16 argument)
+void BtlController_EmitBattleAnimation(u32 battler, u32 bufferId, u8 animationId, struct DisableStruct *disableStructPtr, u16 argument)
 {
     gBattleResources->transferBuffer[0] = CONTROLLER_BATTLEANIMATION;
     gBattleResources->transferBuffer[1] = animationId;
@@ -2396,7 +2409,7 @@ void BtlController_HandleGetMonData(u32 battler)
             monToCheck >>= 1;
         }
     }
-    BtlController_EmitDataTransfer(battler, BUFFER_B, size, monData);
+    BtlController_EmitDataTransfer(battler, B_COMM_TO_ENGINE, size, monData);
     BattleControllerComplete(battler);
 }
 
@@ -2412,7 +2425,7 @@ void BtlController_HandleGetRawMonData(u32 battler)
     for (i = 0; i < gBattleResources->bufferA[battler][2]; i++)
         dst[i] = src[i];
 
-    BtlController_EmitDataTransfer(battler, BUFFER_B, gBattleResources->bufferA[battler][2], dst);
+    BtlController_EmitDataTransfer(battler, B_COMM_TO_ENGINE, gBattleResources->bufferA[battler][2], dst);
     BattleControllerComplete(battler);
 }
 

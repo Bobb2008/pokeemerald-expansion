@@ -1297,7 +1297,7 @@ static void TrySetBattleSeminarShow(void)
 
 static bool8 ShouldCalculateDamage(u16 move, s32 *dmg, u16 *powerOverride)
 {
-    if (IsBattleMoveStatus(moveId))
+    if (IsBattleMoveStatus(move))
     {
         *dmg = 0;
         return FALSE;
@@ -1362,7 +1362,7 @@ u8 GetBattlerMoveSlotId(u8 battler, u16 move)
 {
     s32 i;
     struct Pokemon *party;
-    party = GetBattlerParty(battlerId);
+    party = GetBattlerParty(battler);
 
     i = 0;
     while (1)
@@ -1384,7 +1384,7 @@ static void AddPointsBasedOnWeather(u16 weatherFlags, u16 move, u8 moveSlot)
     else if (weatherFlags & B_WEATHER_SUN)
         AddMovePoints(PTS_SUN, move, moveSlot, 0);
     else if (weatherFlags & B_WEATHER_SANDSTORM)
-        AddMovePoints(PTS_SANDSTORM, moveId, moveSlot, 0);
-    else if (weatherFlags & (B_WEATHER_HAIL | B_WEATHER_SNOW))
-        AddMovePoints(PTS_HAIL, moveId, moveSlot, 0);
+        AddMovePoints(PTS_SANDSTORM, move, moveSlot, 0);
+    else if (weatherFlags & B_WEATHER_HAIL)
+        AddMovePoints(PTS_HAIL, move, moveSlot, 0);
 }

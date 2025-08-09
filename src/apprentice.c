@@ -369,7 +369,7 @@ static u16 GetRandomAlternateMove(u8 monId)
                 for (; j < numLearnsetMoves; j++)
                 {
                     // Keep looking for TMs until one not in the level up learnset is found
-                    if ((learnset[j].move) == moveId)
+                    if ((learnset[j].move) == move)
                     {
                         shouldUseMove = FALSE;
                         break;
@@ -393,13 +393,13 @@ static u16 GetRandomAlternateMove(u8 monId)
                 {
                     // Get a random move excluding the 4 it would know at max level
                     u8 learnsetId = Random() % (numLearnsetMoves - MAX_MON_MOVES);
-                    moveId = learnset[learnsetId].move;
+                    move = learnset[learnsetId].move;
                     shouldUseMove = TRUE;
 
                     for (j = numLearnsetMoves - MAX_MON_MOVES; j < numLearnsetMoves; j++)
                     {
                         // Keep looking for moves until one not in the last 4 is found
-                        if ((learnset[j].move) == moveId)
+                        if ((learnset[j].move) == move)
                         {
                             shouldUseMove = FALSE;
                             break;
@@ -411,7 +411,7 @@ static u16 GetRandomAlternateMove(u8 monId)
 
         if (TrySetMove(monId, move))
         {
-            if (IsValidApprenticeMove(moveId))
+            if (IsValidApprenticeMove(move))
                 break;
             i++;
         }
@@ -584,8 +584,8 @@ static void CreateApprenticeMenu(u8 menu)
     case APPRENTICE_ASK_MOVES:
         left = 17;
         top = 8;
-        strings[0] = GetMoveName(gApprenticeQuestionData->moveId1);
-        strings[1] = GetMoveName(gApprenticeQuestionData->moveId2);
+        strings[0] = GetMoveName(gApprenticeQuestionData->move1);
+        strings[1] = GetMoveName(gApprenticeQuestionData->move2);
         break;
     case APPRENTICE_ASK_GIVE:
         left = 18;
@@ -1041,10 +1041,10 @@ static void ApprenticeBufferString(void)
         StringCopy(stringDst, GetSpeciesName(gApprenticeQuestionData->speciesId));
         break;
     case APPRENTICE_BUFF_MOVE1:
-        StringCopy(stringDst, GetMoveName(gApprenticeQuestionData->moveId1));
+        StringCopy(stringDst, GetMoveName(gApprenticeQuestionData->move1));
         break;
     case APPRENTICE_BUFF_MOVE2:
-        StringCopy(stringDst, GetMoveName(gApprenticeQuestionData->moveId2));
+        StringCopy(stringDst, GetMoveName(gApprenticeQuestionData->move2));
         break;
     case APPRENTICE_BUFF_ITEM:
         StringCopy(stringDst, GetItemName(PLAYER_APPRENTICE.questions[CURRENT_QUESTION_NUM].data));

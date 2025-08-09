@@ -23,7 +23,7 @@
 
 static bool8 CheckPyramidBagHasItem(u16 itemId, u16 count);
 static bool8 CheckPyramidBagHasSpace(u16 itemId, u16 count);
-static const u8 *ItemId_GetPluralName(u16);
+static const u8 *GetItemPluralName(u16);
 static bool32 DoesItemHavePluralName(u16);
 
 EWRAM_DATA struct BagPocket gBagPockets[POCKETS_COUNT] = {0};
@@ -86,7 +86,7 @@ void SetBagItemsPointers(void)
 
 u8 *CopyItemName(u16 itemId, u8 *dst)
 {
-    return StringCopy(dst, ItemId_GetName(itemId));
+    return StringCopy(dst, GetItemName(itemId));
 }
 
 const u8 sText_s[] =_("s");
@@ -95,15 +95,15 @@ u8 *CopyItemNameHandlePlural(u16 itemId, u8 *dst, u32 quantity)
 {
     if (quantity == 1)
     {
-        return StringCopy(dst, ItemId_GetName(itemId));
+        return StringCopy(dst, GetItemName(itemId));
     }
     else if (DoesItemHavePluralName(itemId))
     {
-        return StringCopy(dst, ItemId_GetPluralName(itemId));
+        return StringCopy(dst, GetItemPluralName(itemId));
     }
     else
     {
-        u8 *end = StringCopy(dst, ItemId_GetName(itemId));
+        u8 *end = StringCopy(dst, GetItemName(itemId));
         return StringCopy(end, sText_s);
     }
 }
@@ -179,7 +179,7 @@ bool8 HasAtLeastOnePokeBall(void)
 
 bool8 CheckBagHasSpace(u16 itemId, u16 count)
 {
-    if (ItemId_GetPocket(itemId) == POCKET_NONE)
+    if (GetItemPocket(itemId) == POCKET_NONE)
         return FALSE;
 
     if (InBattlePyramid() || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE)
@@ -191,11 +191,11 @@ bool8 CheckBagHasSpace(u16 itemId, u16 count)
 u32 GetFreeSpaceForItemInBag(u16 itemId)
 {
     u8 i;
-    u8 pocket = ItemId_GetPocket(itemId) - 1;
+    u8 pocket = GetItemPocket(itemId) - 1;
     u16 ownedCount;
     u32 spaceForItem = 0;
 
-    if (ItemId_GetPocket(itemId) == POCKET_NONE)
+    if (GetItemPocket(itemId) == POCKET_NONE)
         return 0;
 
     // Check space in any existing item slots that already contain this item
@@ -870,7 +870,7 @@ const u8 *ItemId_GetName(u16 itemId)
     return gItemsInfo[SanitizeItemId(itemId)].name;
 }
 
-u32 ItemId_GetPrice(u16 itemId)
+u32 GetItemPrice(u16 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].price;
 }
@@ -880,12 +880,12 @@ static bool32 DoesItemHavePluralName(u16 itemId)
     return (gItemsInfo[SanitizeItemId(itemId)].pluralName[0] != '\0');
 }
 
-static const u8 *ItemId_GetPluralName(u16 itemId)
+static const u8 *GetItemPluralName(u16 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].pluralName;
 }
 
-const u8 *ItemId_GetEffect(u32 itemId)
+const u8 *GetItemEffect(u32 itemId)
 {
     if (itemId == ITEM_ENIGMA_BERRY_E_READER)
     #if FREE_ENIGMA_BERRY == FALSE
@@ -897,12 +897,12 @@ const u8 *ItemId_GetEffect(u32 itemId)
         return gItemsInfo[SanitizeItemId(itemId)].effect;
 }
 
-u32 ItemId_GetHoldEffect(u32 itemId)
+u32 GetItemHoldEffect(u32 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].holdEffect;
 }
 
-u32 ItemId_GetHoldEffectParam(u32 itemId)
+u32 GetItemHoldEffectParam(u32 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].holdEffectParam;
 }
@@ -917,7 +917,7 @@ u8 GetItemImportance(u16 itemId)
     return gItemsInfo[SanitizeItemId(itemId)].importance;
 }
 
-u8 ItemId_GetConsumability(u16 itemId)
+u8 GetItemConsumability(u16 itemId)
 {
     return !gItemsInfo[SanitizeItemId(itemId)].notConsumed;
 }
@@ -938,7 +938,7 @@ ItemUseFunc GetItemFieldFunc(u16 itemId)
 }
 
 // Returns an item's battle effect script ID.
-u8 ItemId_GetBattleUsage(u16 itemId)
+u8 GetItemBattleUsage(u16 itemId)
 {
     u16 item = SanitizeItemId(itemId);
     // Handle E-Reader berries.
@@ -969,12 +969,12 @@ u8 ItemId_GetBattleUsage(u16 itemId)
         return gItemsInfo[item].battleUsage;
 }
 
-u32 ItemId_GetSecondaryId(u32 itemId)
+u32 GetItemSecondaryId(u32 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].secondaryId;
 }
 
-u32 ItemId_GetFlingPower(u32 itemId)
+u32 GetItemFlingPower(u32 itemId)
 {
     return gItemsInfo[SanitizeItemId(itemId)].flingPower;
 }
@@ -982,7 +982,7 @@ u32 ItemId_GetFlingPower(u32 itemId)
 
 u32 GetItemStatus1Mask(u16 itemId)
 {
-    const u8 *effect = ItemId_GetEffect(itemId);
+    const u8 *effect = GetItemEffect(itemId);
     switch (effect[3])
     {
         case ITEM3_PARALYSIS:
@@ -1003,7 +1003,7 @@ u32 GetItemStatus1Mask(u16 itemId)
 
 u32 GetItemStatus2Mask(u16 itemId)
 {
-    const u8 *effect = ItemId_GetEffect(itemId);
+    const u8 *effect = GetItemEffect(itemId);
     if (effect[3] & ITEM3_STATUS_ALL)
         return STATUS2_INFATUATION | STATUS2_CONFUSION;
     else if (effect[0] & ITEM0_INFATUATION)

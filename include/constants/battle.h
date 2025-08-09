@@ -616,4 +616,16 @@ enum StartingStatus
     STARTING_STATUS_SWAMP_OPPONENT,
 };
 
+enum SlideMsgStates
+{
+    PRINT_SLIDE_MESSAGE,
+    RESTORE_BATTLER_SLIDE_CONTROL,
+};
+
+enum MonState
+{
+    MON_IN_BATTLE,
+    MON_OUTSIDE_BATTLE,
+};
+
 #endif // GUARD_CONSTANTS_BATTLE_H

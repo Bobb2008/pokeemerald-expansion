@@ -230,7 +230,7 @@ void ClearPlayerLinkBattleRecords(void)
 }
 
 #if FREE_LINK_BATTLE_RECORDS == FALSE
-static void IncTrainerCardWins(s32 battlerId)
+static void IncTrainerCardWins(s32 battler)
 {
     u16 *wins = &gTrainerCards[battler].linkBattleWins;
     (*wins)++;

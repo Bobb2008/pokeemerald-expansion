@@ -1026,7 +1026,7 @@ u8 GetAnimBattlerId(u8 wantedBattler)
     }
 }
 
-bool8 IsBattlerSpriteVisible(u8 battlerId)
+bool8 IsBattlerSpriteVisible(u8 battler)
 {
     if (IsContest())
     {

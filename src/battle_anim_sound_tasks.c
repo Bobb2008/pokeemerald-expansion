@@ -167,7 +167,7 @@ void SoundTask_PlayCryHighPitch(u8 taskId)
             return;
         }
 
-        species = (GetIllusionMonSpecies(battlerId) != SPECIES_NONE) ? GetIllusionMonSpecies(battlerId) : gAnimBattlerSpecies[battlerId];
+        species = (GetIllusionMonSpecies(battler) != SPECIES_NONE) ? GetIllusionMonSpecies(battler) : gAnimBattlerSpecies[battler];
     }
 
     if (species != SPECIES_NONE)
@@ -212,7 +212,7 @@ void SoundTask_PlayDoubleCry(u8 taskId)
             return;
         }
 
-        species = (GetIllusionMonSpecies(battlerId) != SPECIES_NONE) ? GetIllusionMonSpecies(battlerId) : gAnimBattlerSpecies[battlerId];
+        species = (GetIllusionMonSpecies(battler) != SPECIES_NONE) ? GetIllusionMonSpecies(battler) : gAnimBattlerSpecies[battler];
     }
 
     gTasks[taskId].data[0] = gBattleAnimArgs[1];

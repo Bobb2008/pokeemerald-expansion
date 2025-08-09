@@ -1238,7 +1238,7 @@ static void PrintCurrentOptionDescription(void)
 // Can occur by obtaining a mon with a ribbon and then releasing all ribbon winners
 static void PrintNoRibbonWinners(void)
 {
-    struct Pokenav_MenuGfx * gfx = GetSubstructPtr(POKENAV_SUBSTRUCT_MENU_GFX);
+    struct Pokenav_MenuGfx *gfx = GetSubstructPtr(POKENAV_SUBSTRUCT_MENU_GFX);
     const u8 *s = gText_NoRibbonWinners;
     u32 width = GetStringWidth(FONT_NORMAL, s, -1);
     FillWindowPixelBuffer(gfx->optionDescWindowId, PIXEL_FILL(6));

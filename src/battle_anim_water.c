@@ -657,6 +657,11 @@ static void AnimKnockOffAquaTailStep(struct Sprite *sprite)
     sprite->data[2]++;
 }
 
+#define tRaindropSpawnTimer    data[0]
+#define tRaindropUnused        data[1]
+#define tRaindropSpawnInterval data[2]
+#define tRaindropSpawnDuration data[3] // number of frames over which we spawn raindrops
+
 void AnimTask_CreateRaindrops(u8 taskId)
 {
     u8 x, y;

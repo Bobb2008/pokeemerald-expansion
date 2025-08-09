@@ -887,7 +887,7 @@ static void Task_HofPC_CopySaveData(u8 taskId)
 static void Task_HofPC_DrawSpritesPrintText(u8 taskId)
 {
     struct HallofFameTeam *savedTeams = gHoFSaveBuffer;
-    struct HallofFameMon* currMon;
+    struct HallofFameMon *currMon;
     u16 i;
 
     for (i = 0; i < gTasks[taskId].tCurrTeamNo; i++)
@@ -953,7 +953,7 @@ static void Task_HofPC_DrawSpritesPrintText(u8 taskId)
 static void Task_HofPC_PrintMonInfo(u8 taskId)
 {
     struct HallofFameTeam *savedTeams = gHoFSaveBuffer;
-    struct HallofFameMon* currMon;
+    struct HallofFameMon *currMon;
     u16 i;
     u16 currMonID;
 

@@ -122,8 +122,8 @@ struct EasyChatWordsByLetter
 
 void InitEasyChatPhrases(void);
 void ShowEasyChatScreen(void);
-u8 *CopyEasyChatWord(u8 *dest, u16 word);
-bool32 IsEasyChatAnswerUnlocked(int word);
+u8 *CopyEasyChatWord(u8 *dest, u16 easyChatWord);
+bool32 IsEasyChatAnswerUnlocked(int easyChatWord);
 void InitializeEasyChatWordArray(u16 *words, u16 length);
 u8 *ConvertEasyChatWordsToString(u8 *dest, const u16 *src, u16 columns, u16 rows);
 bool8 IsBardWordInvalid(u16 easyChatWord);

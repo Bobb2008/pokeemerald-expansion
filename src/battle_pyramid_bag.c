@@ -1312,8 +1312,8 @@ static void TryCloseBagToGiveItem(u8 taskId)
 static void BagAction_UseInBattle(u8 taskId)
 {
     // Safety check
-    u16 type = ItemId_GetType(gSpecialVar_ItemId);
-    if (!ItemId_GetBattleUsage(gSpecialVar_ItemId))
+    u16 type = GetItemType(gSpecialVar_ItemId);
+    if (!GetItemBattleUsage(gSpecialVar_ItemId))
         return;
 
     CloseMenuActionWindow();

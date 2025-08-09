@@ -592,8 +592,8 @@ void LaunchStatusAnimation(u8 battler, u8 statusAnimId)
 {
     u8 taskId;
 
-    gBattleAnimAttacker = battlerId;
-    gBattleAnimTarget = battlerId;
+    gBattleAnimAttacker = battler;
+    gBattleAnimTarget = battler;
     LaunchBattleAnimation(ANIM_TYPE_STATUS, statusAnimId);
     taskId = CreateTask(Task_DoStatusAnimation, 10);
     gTasks[taskId].data[0] = battler;

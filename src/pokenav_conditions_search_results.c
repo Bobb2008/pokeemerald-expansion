@@ -700,7 +700,7 @@ static void CreateSearchResultsList(void)
     CreatePokenavList(&sConditionSearchResultBgTemplates[1], &template, 0);
 }
 
-static void BufferSearchMonListItem(struct PokenavMonListItem * item, u8 *dest)
+static void BufferSearchMonListItem(struct PokenavMonListItem *item, u8 *dest)
 {
     u8 gender;
     u8 level;
