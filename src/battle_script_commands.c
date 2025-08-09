@@ -5714,7 +5714,7 @@ static void Cmd_moveend(void)
                 gEffectBattler = gBattlerTarget;
                 BattleScriptPushCursor();
                 gBattlescriptCurrInstr = BattleScript_MagicianActivates;
-                gSpecialStatuses[gBattlerAttacker].magicianStolen = TRUE;
+                gSpecialStatuses[gBattlerAttacker].preventLifeOrbDamage = TRUE;
                 effect = TRUE;
             }
             gBattleScripting.moveendState++;
@@ -5901,6 +5901,7 @@ static void Cmd_moveend(void)
                             gBattlescriptCurrInstr = BattleScript_MoveEnd;  // Prevent user switch-in selection
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr = BattleScript_RedCardActivates;
+                        gSpecialStatuses[gBattlerAttacker].preventLifeOrbDamage = TRUE;
                         effect = TRUE;
                         break;  // Only fastest red card activates
                     }
@@ -5927,6 +5928,7 @@ static void Cmd_moveend(void)
                         gLastUsedItem = gBattleMons[battler].item;
                         BattleScriptPushCursor();
                         gBattlescriptCurrInstr = BattleScript_EjectPackActivates;
+                        gSpecialStatuses[gBattlerAttacker].preventLifeOrbDamage = TRUE;
                         effect = TRUE;
                         break;  // Only fastest eject pack activates
                     }
@@ -6079,7 +6081,7 @@ static void Cmd_moveend(void)
             gStatuses3[gBattlerAttacker] &= ~STATUS3_ME_FIRST;
             gSpecialStatuses[gBattlerAttacker].gemBoost = FALSE;
             gSpecialStatuses[gBattlerAttacker].damagedMons = 0;
-            gSpecialStatuses[gBattlerAttacker].magicianStolen = 0;
+            gSpecialStatuses[gBattlerAttacker].preventLifeOrbDamage = 0;
             gSpecialStatuses[gBattlerTarget].berryReduced = FALSE;
             gBattleScripting.moveEffect = 0;
             // clear attacker z move data
@@ -8124,8 +8126,8 @@ static bool32 HasAttackerFaintedTarget(void)
 
 bool32 CanPoisonType(u8 battlerAttacker, u8 battlerTarget)
 {
-    return ((GetBattlerAbility(battlerAttacker) == ABILITY_CORROSION && gBattleMoves[gCurrentMove].split == SPLIT_STATUS)
-            || !(IS_BATTLER_OF_TYPE(battlerTarget, TYPE_POISON) || IS_BATTLER_OF_TYPE(battlerTarget, TYPE_STEEL)));
+    return GetBattlerAbility(battlerAttacker) == ABILITY_CORROSION
+        || (!IS_BATTLER_OF_TYPE(battlerTarget, TYPE_STEEL) && !IS_BATTLER_OF_TYPE(battlerTarget, TYPE_POISON));
 }
 
 bool32 CanParalyzeType(u8 battlerAttacker, u8 battlerTarget)
