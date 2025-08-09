@@ -204,8 +204,8 @@ static void Intro_WaitForShinyAnimAndHealthbox(u32 battler)
                     return;
                 }
             }
-                gBattleSpritesDataPtr->healthBoxesData[battler].triedShinyMonAnim = FALSE;
-                gBattleSpritesDataPtr->healthBoxesData[battler].finishedShinyMonAnim = FALSE;
+            gBattleSpritesDataPtr->healthBoxesData[battler].triedShinyMonAnim = FALSE;
+            gBattleSpritesDataPtr->healthBoxesData[battler].finishedShinyMonAnim = FALSE;
         }
         else
         {
