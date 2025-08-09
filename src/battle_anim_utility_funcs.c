@@ -133,7 +133,7 @@ void AnimTask_SetCamouflageBlend(u8 taskId)
     case BATTLE_ENVIRONMENT_BUILDING:
         gBattleAnimArgs[4] = RGB_WHITE;
         break;
-    case BATTLE_TERRAIN_PLAIN:
+    case BATTLE_ENVIRONMENT_PLAIN:
     default:
         gBattleAnimArgs[4] = RGB_WHITE;
         break;
@@ -722,6 +722,10 @@ void AnimTask_BlendNonAttackerPalettes(u8 taskId)
     StartBlendAnimSpriteColor(taskId, selectedPalettes);
 }
 
+// gBattleAnimArgs[0] - initial x
+// gBattleAnimArgs[1] - initial y
+// gBattleAnimArgs[2] - negative?
+// gBattleAnimArgs[3] - sentinel value to compare to
 void AnimTask_StartSlidingBg(u8 taskId)
 {
     u8 newTaskId;
