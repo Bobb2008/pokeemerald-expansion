@@ -1477,7 +1477,7 @@
 	@ the object event limit (e.g. Contest / Battle Dome audiences and Union Room group members).
 	@ The specified id can be used to refer to the sprite again later with turnvobject.
 	.macro createvobject graphicsId:req, id:req, x:req, y:req, elevation=3, direction=DIR_SOUTH
-	.byte 0xaa
+	.byte SCR_OP_CREATEVOBJECT
 	.2byte \graphicsId
 	.byte \id
 	.2byte \x
@@ -1567,7 +1567,7 @@
 	@ Running this command will not affect normal wild battles. You start the prepared battle with dowildbattle.
 	@ If the player only has one Pokemon, a scripted double battle will be buggy.
 	.macro setwildbattle species:req, level:req, item=ITEM_NONE, species2=SPECIES_NONE, level2=0, item2=ITEM_NONE
-	.byte 0xb6
+	.byte SCR_OP_SETWILDBATTLE
 	.2byte \species
 	.byte \level
 	.2byte \item
@@ -1867,7 +1867,7 @@
 	.endm
 
 	.macro _dynmultichoice left:req, top:req, ignoreBPress:req, maxBeforeScroll:req, shouldSort:req, initialSelected:req, callbacks:req argv:vararg
-	.byte 0xe3
+	.byte SCR_OP_DYNMULTICHOICE
 	.2byte \left
 	.2byte \top
 	.byte \ignoreBPress
@@ -1889,7 +1889,7 @@
 	.endm
 
 	.macro dynmultipush name:req, id:req
-	.byte 0xe4
+	.byte SCR_OP_DYNMULTIPUSH
 	.4byte \name
 	.2byte \id
 	.endm
