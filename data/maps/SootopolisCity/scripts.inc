@@ -474,9 +474,10 @@ SootopolisCity_EventScript_RayquazaSceneFromPokeCenter::
 	delay 60
 	fadescreenspeed FADE_TO_BLACK, 8
 	call SootopolisCity_EventScript_SetRoughWater
-	removeobject LOCALID_SOOTOPOLIS_GROUDON
-	removeobject LOCALID_SOOTOPOLIS_KYOGRE
-	addobject LOCALID_SOOTOPOLIS_RAYQUAZA
+	removeobject LOCALID_GROUDON
+	removeobject LOCALID_KYOGRE
+	addobject LOCALID_RAYQUAZA
+	hideobjectat LOCALID_RAYQUAZA, MAP_SOOTOPOLIS_CITY
 	setvar VAR_0x8004, TRUE
 	special Script_DoRayquazaScene
 	waitstate
