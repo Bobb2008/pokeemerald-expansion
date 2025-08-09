@@ -1730,7 +1730,7 @@ static inline bool32 DoesCurrentMapMatchRematchTrainerMap(s32 i, const struct Re
 
 bool32 TrainerIsMatchCallRegistered(s32 i)
 {
-    return FlagGet(FLAG_MATCH_CALL_REGISTERED + i);
+    return FlagGet(TRAINER_REGISTERED_FLAGS_START + i);
 }
 
 #if FREE_MATCH_CALL == FALSE

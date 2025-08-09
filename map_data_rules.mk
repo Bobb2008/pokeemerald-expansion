@@ -24,21 +24,11 @@ $(DATA_ASM_BUILDDIR)/maps.o: $(DATA_ASM_SUBDIR)/maps.s $(LAYOUTS_DIR)/layouts.in
 $(DATA_ASM_BUILDDIR)/map_events.o: $(DATA_ASM_SUBDIR)/map_events.s $(MAPS_DIR)/events.inc $(MAP_EVENTS)
 	$(PREPROC) $< charmap.txt | $(CPP) -I include - | $(PREPROC) -ie $< charmap.txt | $(AS) $(ASFLAGS) -o $@
 
+$(MAPS_OUTDIR)/%/header.inc $(MAPS_OUTDIR)/%/events.inc $(MAPS_OUTDIR)/%/connections.inc: $(MAPS_DIR)/%/map.json
+	$(MAPJSON) map emerald $< $(LAYOUTS_DIR)/layouts.json $(@D)
 
-$(MAPS_DIR)/%/header.inc: $(MAPS_DIR)/%/map.json
-	$(MAPJSON) map emerald $< $(LAYOUTS_DIR)/layouts.json
-$(MAPS_DIR)/%/events.inc: $(MAPS_DIR)/%/header.inc ;
-$(MAPS_DIR)/%/connections.inc: $(MAPS_DIR)/%/events.inc ;
+$(MAPS_OUTDIR)/connections.inc $(MAPS_OUTDIR)/groups.inc $(MAPS_OUTDIR)/events.inc $(MAPS_OUTDIR)/headers.inc $(INCLUDECONSTS_OUTDIR)/map_groups.h $(DATA_SRC_SUBDIR)/map_group_count.h: $(MAPS_DIR)/map_groups.json
+	$(MAPJSON) groups emerald $< $(MAPS_OUTDIR) $(INCLUDECONSTS_OUTDIR)
 
-$(MAPS_DIR)/groups.inc: $(MAPS_DIR)/map_groups.json
-	$(MAPJSON) groups emerald $<
-$(MAPS_DIR)/connections.inc: $(MAPS_DIR)/groups.inc ;
-$(MAPS_DIR)/events.inc: $(MAPS_DIR)/connections.inc ;
-$(MAPS_DIR)/headers.inc: $(MAPS_DIR)/events.inc ;
-$(DATA_SRC_SUBDIR)/map_group_count.h: $(MAPS_DIR)/headers.inc ;
-include/constants/map_groups.h: $(MAPS_DIR)/headers.inc ;
-
-$(LAYOUTS_DIR)/layouts.inc: $(LAYOUTS_DIR)/layouts.json
-	$(MAPJSON) layouts emerald $<
-$(LAYOUTS_DIR)/layouts_table.inc: $(LAYOUTS_DIR)/layouts.inc ;
-include/constants/layouts.h: $(LAYOUTS_DIR)/layouts_table.inc ;
+$(LAYOUTS_OUTDIR)/layouts.inc $(LAYOUTS_OUTDIR)/layouts_table.inc $(INCLUDECONSTS_OUTDIR)/layouts.h: $(LAYOUTS_DIR)/layouts.json
+	$(MAPJSON) layouts emerald $< $(LAYOUTS_OUTDIR) $(INCLUDECONSTS_OUTDIR)
