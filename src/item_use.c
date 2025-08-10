@@ -983,7 +983,7 @@ void ItemUseOutOfBattle_Lure(u8 taskId)
 {
     if (LURE_STEP_COUNT == 0)
         gTasks[taskId].func = Task_StartUseLure;
-    else if (!InBattlePyramid())
+    else if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
         DisplayItemMessage(taskId, FONT_NORMAL, gText_LureEffectsLingered, CloseItemMessage);
     else
         DisplayItemMessageInBattlePyramid(taskId, gText_LureEffectsLingered, Task_CloseBattlePyramidBagMessage);
@@ -1010,7 +1010,7 @@ static void Task_UseLure(u8 taskId)
         VarSet(VAR_LAST_REPEL_LURE_USED, gSpecialVar_ItemId);
     #endif
         RemoveUsedItem();
-        if (!InBattlePyramid())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
             DisplayItemMessage(taskId, FONT_NORMAL, gStringVar4, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, gStringVar4, Task_CloseBattlePyramidBagMessage);
@@ -1140,25 +1140,25 @@ void ItemUseInBattle_PokeBall(u8 taskId)
             CloseBattlePyramidBag(taskId);
         break;
     case BALL_THROW_UNABLE_TWO_MONS:
-        if (!InBattlePyramid())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
             DisplayItemMessage(taskId, FONT_NORMAL, sText_CantThrowPokeBall_TwoMons, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, sText_CantThrowPokeBall_TwoMons, Task_CloseBattlePyramidBagMessage);
         break;
     case BALL_THROW_UNABLE_NO_ROOM:
-        if (!InBattlePyramid())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
             DisplayItemMessage(taskId, FONT_NORMAL, gText_BoxFull, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, gText_BoxFull, Task_CloseBattlePyramidBagMessage);
         break;
     case BALL_THROW_UNABLE_SEMI_INVULNERABLE:
-        if (!InBattlePyramid())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
             DisplayItemMessage(taskId, FONT_NORMAL, sText_CantThrowPokeBall_SemiInvulnerable, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, sText_CantThrowPokeBall_SemiInvulnerable, Task_CloseBattlePyramidBagMessage);
         break;
     case BALL_THROW_UNABLE_DISABLED_FLAG:
-        if (!InBattlePyramid())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
             DisplayItemMessage(taskId, FONT_NORMAL, sText_CantThrowPokeBall_Disabled, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, sText_CantThrowPokeBall_Disabled, Task_CloseBattlePyramidBagMessage);
@@ -1316,7 +1316,7 @@ void ItemUseInBattle_BagMenu(u8 taskId)
 {
     if (CannotUseItemsInBattle(gSpecialVar_ItemId, NULL))
     {
-        if (!InBattlePyramid())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
             DisplayItemMessage(taskId, FONT_NORMAL, gStringVar4, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, gStringVar4, Task_CloseBattlePyramidBagMessage);
@@ -1327,7 +1327,7 @@ void ItemUseInBattle_BagMenu(u8 taskId)
         if (!GetItemImportance(gSpecialVar_ItemId) && !(B_TRY_CATCH_TRAINER_BALL >= GEN_4 && (GetItemBattleUsage(gSpecialVar_ItemId) == EFFECT_ITEM_THROW_BALL) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
             RemoveUsedItem();
         ScheduleBgCopyTilemapToVram(2);
-        if (!InBattlePyramid())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
             gTasks[taskId].func = Task_FadeAndCloseBagMenu;
         else
             gTasks[taskId].func = CloseBattlePyramidBag;

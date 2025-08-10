@@ -337,7 +337,7 @@ static void DoStandardWildBattle(bool32 isDouble)
     }
     else if (isDouble)
         gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
-    if (InBattlePyramid())
+    if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
     {
         VarSet(VAR_TEMP_E, 0);
         gBattleTypeFlags |= BATTLE_TYPE_PYRAMID;
@@ -591,7 +591,7 @@ static void CB2_EndWildBattle(void)
             HealPlayerParty();
     }
 
-    if (IsPlayerDefeated(gBattleOutcome) == TRUE && !InBattlePyramid() && !InBattlePike())
+    if (IsPlayerDefeated(gBattleOutcome) == TRUE && CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE && !InBattlePike())
     {
         SetMainCallback2(CB2_WhiteOut);
     }
@@ -1305,7 +1305,7 @@ static void CB2_EndTrainerBattle(void)
     }
     else if (IsPlayerDefeated(gBattleOutcome) == TRUE)
     {
-        if (InBattlePyramid() || InTrainerHillChallenge() || (!NoAliveMonsForPlayer()) || FlagGet(B_FLAG_NO_WHITEOUT))
+        if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHillChallenge() || (!NoAliveMonsForPlayer()) || FlagGet(B_FLAG_NO_WHITEOUT))
             SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         else
             SetMainCallback2(CB2_WhiteOut);
@@ -1318,7 +1318,7 @@ static void CB2_EndTrainerBattle(void)
     {
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         DowngradeBadPoison();
-        if (!InBattlePyramid() && !InTrainerHillChallenge())
+        if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE && !InTrainerHillChallenge())
         {
             RegisterTrainerInMatchCall();
             SetBattledTrainersFlags();

@@ -182,7 +182,7 @@ bool8 CheckBagHasSpace(u16 itemId, u16 count)
     if (GetItemPocket(itemId) == POCKET_NONE)
         return FALSE;
 
-    if (InBattlePyramid() || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE)
+    if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE)
         return CheckPyramidBagHasSpace(itemId, count);
 
     return GetFreeSpaceForItemInBag(itemId) >= count;

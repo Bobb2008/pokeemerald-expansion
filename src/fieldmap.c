@@ -52,7 +52,7 @@ static inline u16 GetBorderBlockAt(int x, int y)
 {
     int i = (x + 1) & 1;
     i += ((y + 1) & 1) * 2;
-    return gMapHeader.mapLayout->border[i] | MAPGRID_COLLISION_MASK;
+    return gMapHeader.mapLayout->border[i] | MAPGRID_IMPASSABLE;
 }
 
 #define AreCoordsWithinMapGridBounds(x, y) (x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height)
