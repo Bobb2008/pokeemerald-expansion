@@ -11,6 +11,7 @@ INCLUDECONSTS_OUTDIR := include/constants
 
 AUTO_GEN_TARGETS += $(INCLUDECONSTS_OUTDIR)/map_groups.h
 AUTO_GEN_TARGETS += $(INCLUDECONSTS_OUTDIR)/layouts.h
+AUTO_GEN_TARGETS += $(INCLUDECONSTS_OUTDIR)/map_event_ids.h
 AUTO_GEN_TARGETS += $(DATA_SRC_SUBDIR)/map_group_count.h
 
 MAP_DIRS := $(dir $(wildcard $(MAPS_DIR)/*/map.json))

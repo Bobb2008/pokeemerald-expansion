@@ -220,7 +220,7 @@ void RoamerMove(u32 roamerIndex)
                     mapNum = sRoamerLocations[locSet][(Random() % (NUM_LOCATIONS_PER_SET - 1)) + 1];
                 } while ((sLocationHistory[roamerIndex][2][MAP_GRP] == ROAMER_MAP_GROUP
                         && sLocationHistory[roamerIndex][2][MAP_NUM] == mapNum)
-                        || mapNum == MAP_NUM(UNDEFINED));
+                        || mapNum == MAP_NUM(MAP_UNDEFINED));
                 sRoamerLocation[roamerIndex][MAP_NUM] = mapNum;
                 return;
             }
