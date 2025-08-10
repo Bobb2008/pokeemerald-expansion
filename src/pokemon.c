@@ -14,6 +14,7 @@
 #include "data.h"
 #include "dexnav.h"
 #include "event_data.h"
+#include "event_object_movement.h"
 #include "evolution_scene.h"
 #include "field_player_avatar.h"
 #include "field_specials.h"
@@ -52,6 +53,7 @@
 #include "constants/battle_partner.h"
 #include "constants/battle_string_ids.h"
 #include "constants/cries.h"
+#include "constants/event_objects.h"
 #include "constants/form_change_types.h"
 #include "constants/hold_effects.h"
 #include "constants/item_effects.h"
@@ -63,6 +65,7 @@
 #include "constants/trainers.h"
 #include "constants/union_room.h"
 #include "constants/weather.h"
+#include "wild_encounter.h"
 
 #define FRIENDSHIP_EVO_THRESHOLD ((P_FRIENDSHIP_EVO_THRESHOLD >= GEN_8) ? 160 : 220)
 
@@ -88,6 +91,7 @@ EWRAM_DATA struct Pokemon gEnemyParty[PARTY_SIZE] = {0};
 EWRAM_DATA struct SpriteTemplate gMultiuseSpriteTemplate = {0};
 EWRAM_DATA static struct MonSpritesGfxManager *sMonSpritesGfxManagers[MON_SPR_GFX_MANAGERS_COUNT] = {NULL};
 EWRAM_DATA static u8 sTriedEvolving = 0;
+EWRAM_DATA u16 gFollowerSteps = 0;
 
 #include "data/abilities.h"
 #if P_TUTOR_MOVES_ARRAY
@@ -365,7 +369,15 @@ const struct SpindaSpot gSpindaSpotGraphics[] =
     {.x = 34, .y = 26, .image = INCBIN_U16("graphics/pokemon/spinda/spots/spot_3.1bpp")}
 };
 
-const u8 *const gNatureNamePointers[NUM_NATURES] =
+// In Battle Palace, moves are chosen based on the pokemons nature rather than by the player
+// Moves are grouped into "Attack", "Defense", or "Support" (see PALACE_MOVE_GROUP_*)
+// Each nature has a certain percent chance of selecting a move from a particular group
+// and a separate percent chance for each group when at or below 50% HP
+// The table below doesn't list percentages for Support because you can subtract the other two
+// Support percentages are listed in comments off to the side instead
+#define PALACE_STYLE(atk, def, atkLow, defLow) {atk, atk + def, atkLow, atkLow + defLow}
+
+const struct NatureInfo gNaturesInfo[NUM_NATURES] =
 {
     [NATURE_HARDY] =
     {
@@ -695,9 +707,11 @@ const u8 *const gNatureNamePointers[NUM_NATURES] =
 #endif
 
 #include "data/pokemon/teachable_learnsets.h"
+#include "data/pokemon/egg_moves.h"
 #include "data/pokemon/form_species_tables.h"
 #include "data/pokemon/form_change_tables.h"
 #include "data/pokemon/form_change_table_pointers.h"
+#include "data/object_events/object_event_pic_tables_followers.h"
 
 #include "data/pokemon/species_info.h"
 
@@ -996,6 +1010,20 @@ static const u32 sCompressedStatuses[] =
 // - The maximum PP.
 // - The maximum HP.
 // - The maximum form countdown.
+
+// The following STATIC_ASSERT will prevent developers from compiling the game if the value of the constant on the left does not fit within the number of bits defined in PokemonSubstruct0 (currently located in include/pokemon.h).
+
+// To successfully compile, developers will need to do one of the following:
+// 1) Decrease the size of the constant.
+// 2) Increase the number of bits both on the struct AND in the corresponding assert. This will likely break user's saves unless there is free space after the member that is being adjsted.
+// 3) Repurpose unused IDs.
+
+// EXAMPLES
+// If a developer has added enough new items so that ITEMS_COUNT now equals 1200, they could...
+// 1) remove new items until ITEMS_COUNT is 1023, the max value that will fit in 10 bits.
+// 2) change heldItem:10 to heldItem:11 AND change the below assert for ITEMS_COUNT to check for (1 << 11).
+// 3) repurpose IDs from other items that aren't being used, like ITEM_GOLD_TEETH or ITEM_SS_TICKET until ITEMS_COUNT equals 1023, the max value that will fit in 10 bits.
+
 STATIC_ASSERT(NUM_SPECIES < (1 << 11), PokemonSubstruct0_species_TooSmall);
 STATIC_ASSERT(NUMBER_OF_MON_TYPES + 1 <= (1 << 5), PokemonSubstruct0_teraType_TooSmall);
 STATIC_ASSERT(ITEMS_COUNT < (1 << 10), PokemonSubstruct0_heldItem_TooSmall);
@@ -1118,6 +1146,14 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
         {
             isShiny = TRUE;
         }
+        else if (P_ONLY_OBTAINABLE_SHINIES && InBattlePyramid())
+        {
+            isShiny = FALSE;
+        }
+        else if (P_NO_SHINIES_WITHOUT_POKEBALLS && !HasAtLeastOnePokeBall())
+        {
+            isShiny = FALSE;
+        }
         else
         {
             u32 totalRerolls = 0;
@@ -1180,7 +1216,8 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
     else
     {
         u32 iv;
-        value = Random();
+        u32 ivRandom = Random32();
+        value = (u16)ivRandom;
 
         iv = value & MAX_IV_MASK;
         SetBoxMonData(boxMon, MON_DATA_HP_IV, &iv);
@@ -1189,7 +1226,7 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
         iv = (value & (MAX_IV_MASK << 10)) >> 10;
         SetBoxMonData(boxMon, MON_DATA_DEF_IV, &iv);
 
-        value = Random();
+        value = (u16)(ivRandom >> 16);
 
         iv = value & MAX_IV_MASK;
         SetBoxMonData(boxMon, MON_DATA_SPEED_IV, &iv);
@@ -1575,7 +1612,7 @@ void ConvertPokemonToBattleTowerPokemon(struct Pokemon *mon, struct BattleTowerP
     dest->spDefenseIV  = GetMonData(mon, MON_DATA_SPDEF_IV, NULL);
     dest->abilityNum = GetMonData(mon, MON_DATA_ABILITY_NUM, NULL);
     dest->personality = GetMonData(mon, MON_DATA_PERSONALITY, NULL);
-    GetMonData(mon, MON_DATA_NICKNAME, dest->nickname);
+    GetMonData(mon, MON_DATA_NICKNAME10, dest->nickname);
 }
 
 static void CreateEventMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
@@ -1587,7 +1624,7 @@ static void CreateEventMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedI
 }
 
 // If FALSE, should load this game's Deoxys form. If TRUE, should load normal Deoxys form
-bool8 ShouldIgnoreDeoxysForm(u8 caseId, u8 battlerId)
+bool8 ShouldIgnoreDeoxysForm(u8 caseId, u8 battler)
 {
     switch (caseId)
     {
@@ -1599,7 +1636,7 @@ bool8 ShouldIgnoreDeoxysForm(u8 caseId, u8 battlerId)
             return FALSE;
         if (!gMain.inBattle)
             return FALSE;
-        if (gLinkPlayers[GetMultiplayerId()].id == battlerId)
+        if (gLinkPlayers[GetMultiplayerId()].id == battler)
             return FALSE;
         break;
     case 2:
@@ -1609,7 +1646,7 @@ bool8 ShouldIgnoreDeoxysForm(u8 caseId, u8 battlerId)
             return FALSE;
         if (!gMain.inBattle)
             return FALSE;
-        if (battlerId == 1 || battlerId == 4 || battlerId == 5)
+        if (battler == 1 || battler == 4 || battler == 5)
             return TRUE;
         return FALSE;
     case 4:
@@ -1621,7 +1658,7 @@ bool8 ShouldIgnoreDeoxysForm(u8 caseId, u8 battlerId)
                 return FALSE;
             if (gBattleTypeFlags & BATTLE_TYPE_MULTI)
             {
-                if (gLinkPlayers[GetMultiplayerId()].id == battlerId)
+                if (gLinkPlayers[GetMultiplayerId()].id == battler)
                     return FALSE;
             }
             else
@@ -1897,30 +1934,7 @@ void GiveMonInitialMoveset(struct Pokemon *mon)
     GiveBoxMonInitialMoveset(&mon->box);
 }
 
-void GiveBoxMonInitialMoveset(struct BoxPokemon *boxMon)
-{
-    u16 species = GetBoxMonData(boxMon, MON_DATA_SPECIES, NULL);
-    s32 level = GetLevelFromBoxMonExp(boxMon);
-    s32 i;
-    const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset(species);
-
-    for (i = 0; learnset[i].move != LEVEL_UP_MOVE_END; i++)
-    {
-        if (learnset[i].level > level)
-            break;
-        if (learnset[i].level == 0)
-            continue;
-        if (GiveMoveToBoxMon(boxMon, learnset[i].move) == MON_HAS_MAX_MOVES)
-            DeleteFirstMoveAndGiveMoveToBoxMon(boxMon, learnset[i].move);
-    }
-}
-
-void GiveMonInitialMoveset_Fast(struct Pokemon *mon)
-{
-    GiveBoxMonInitialMoveset_Fast(&mon->box);
-}
-
-void GiveBoxMonInitialMoveset_Fast(struct BoxPokemon *boxMon) //Credit: AsparagusEduardo
+void GiveBoxMonInitialMoveset(struct BoxPokemon *boxMon) //Credit: AsparagusEduardo
 {
     u16 species = GetBoxMonData(boxMon, MON_DATA_SPECIES, NULL);
     s32 level = GetLevelFromBoxMonExp(boxMon);
@@ -2398,8 +2412,8 @@ u32 GetMonData2(struct Pokemon *mon, s32 field)
 struct EvolutionTrackerBitfield
 {
     u16 a: 5;
-    u16 b: 4;
-    u16 unused: 7;
+    u16 b: 5;
+    u16 unused: 6;
 };
 
 union EvolutionTracker
@@ -2442,6 +2456,7 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         switch (field)
         {
         case MON_DATA_NICKNAME:
+        case MON_DATA_NICKNAME10:
         {
             if (boxMon->isBadEgg)
             {
@@ -2482,7 +2497,7 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
                 // so if both are 0 we assume that this is a vanilla
                 // Pokémon and replace them with EOS. This means that
                 // two CHAR_SPACE at the end of a nickname are trimmed.
-                if (POKEMON_NAME_LENGTH >= 12)
+                if (field != MON_DATA_NICKNAME10 && POKEMON_NAME_LENGTH >= 12)
                 {
                     if (substruct0->nickname11 == 0 && substruct0->nickname12 == 0)
                     {
@@ -2787,18 +2802,20 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
             retVal = substruct3->gigantamaxFactor;
             break;
         case MON_DATA_TERA_TYPE:
-        {
-            if (substruct0->teraType == 0)
+            if (gSpeciesInfo[substruct0->species].forceTeraType)
+            {
+                retVal = gSpeciesInfo[substruct0->species].forceTeraType;
+            }
+            else if (substruct0->teraType == TYPE_NONE) // Tera Type hasn't been modified so we can just use the personality
             {
                 const u8 *types = gSpeciesInfo[substruct0->species].types;
                 retVal = (boxMon->personality & 0x1) == 0 ? types[0] : types[1];
             }
             else
             {
-                retVal = substruct0->teraType - 1;
+                retVal = substruct0->teraType;
             }
             break;
-        }
         case MON_DATA_EVOLUTION_TRACKER:
             evoTracker.asField.a = substruct1->evolutionTracker1;
             evoTracker.asField.b = substruct1->evolutionTracker2;
@@ -2868,6 +2885,9 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
             retVal = nature ^ boxMon->hiddenNatureModifier;
             break;
         }
+        case MON_DATA_DAYS_SINCE_FORM_CHANGE:
+            retVal = boxMon->daysSinceFormChange;
+            break;
         default:
             break;
         }
@@ -2976,14 +2996,23 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         switch (field)
         {
         case MON_DATA_NICKNAME:
+        case MON_DATA_NICKNAME10:
         {
             s32 i;
             for (i = 0; i < min(sizeof(boxMon->nickname), POKEMON_NAME_LENGTH); i++)
                 boxMon->nickname[i] = data[i];
-            if (POKEMON_NAME_LENGTH >= 11)
-                substruct0->nickname11 = data[10];
-            if (POKEMON_NAME_LENGTH >= 12)
-                substruct0->nickname12 = data[11];
+            if (field != MON_DATA_NICKNAME10)
+            {
+                if (POKEMON_NAME_LENGTH >= 11)
+                    substruct0->nickname11 = data[10];
+                if (POKEMON_NAME_LENGTH >= 12)
+                    substruct0->nickname12 = data[11];
+            }
+            else
+            {
+                substruct0->nickname11 = EOS;
+                substruct0->nickname12 = EOS;
+            }
             break;
         }
         case MON_DATA_SPECIES:
@@ -3284,6 +3313,9 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
             boxMon->hiddenNatureModifier = nature ^ hiddenNature;
             break;
         }
+        case MON_DATA_DAYS_SINCE_FORM_CHANGE:
+            SET8(boxMon->daysSinceFormChange);
+            break;
         }
     }
 
@@ -3333,7 +3365,7 @@ u8 CopyMonToPC(struct Pokemon *mon)
     {
         for (boxPos = 0; boxPos < IN_BOX_COUNT; boxPos++)
         {
-            struct BoxPokemon* checkingMon = GetBoxedMonPtr(boxNo, boxPos);
+            struct BoxPokemon *checkingMon = GetBoxedMonPtr(boxNo, boxPos);
             if (GetBoxMonData(checkingMon, MON_DATA_SPECIES, NULL) == SPECIES_NONE)
             {
                 MonRestorePP(mon);
@@ -3404,6 +3436,9 @@ u8 GetMonsStateToDoubles(void)
     s32 aliveCount = 0;
     s32 i;
     CalculatePlayerPartyCount();
+
+    if (OW_DOUBLE_APPROACH_WITH_ONE_MON)
+        return PLAYER_HAS_TWO_USABLE_MONS;
 
     if (gPlayerPartyCount == 1)
         return gPlayerPartyCount; // PLAYER_HAS_ONE_MON
@@ -3594,6 +3629,14 @@ const u16 *GetSpeciesTeachableLearnset(u16 species)
     return learnset;
 }
 
+const u16 *GetSpeciesEggMoves(u16 species)
+{
+    const u16 *learnset = gSpeciesInfo[SanitizeSpeciesId(species)].eggMoveLearnset;
+    if (learnset == NULL)
+        return gSpeciesInfo[SPECIES_NONE].eggMoveLearnset;
+    return learnset;
+}
+
 const struct Evolution *GetSpeciesEvolutions(u16 species)
 {
     const struct Evolution *evolutions = gSpeciesInfo[SanitizeSpeciesId(species)].evolutions;
@@ -3748,7 +3791,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
     u32 temp1, temp2;
     s8 friendshipChange = 0;
     u8 holdEffect;
-    u8 battlerId = MAX_BATTLERS_COUNT;
+    u8 battler = MAX_BATTLERS_COUNT;
     u32 friendshipOnly = FALSE;
     u16 heldItem;
     u8 effectFlags;
@@ -4014,7 +4057,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
                         else
                         {
                             // Heal PP for one move
-                            u16 moveId;
+                            u16 move;
                             dataUnsigned = GetMonData(mon, MON_DATA_PP1 + moveIndex, NULL);
                             move = GetMonData(mon, MON_DATA_MOVE1 + moveIndex, NULL);
                             u32 ppBonus = CalculatePPWithBonus(move, GetMonData(mon, MON_DATA_PP_BONUSES, NULL), moveIndex);
@@ -5039,9 +5082,8 @@ u16 HoennToNationalOrder(u16 hoennNum)
 
     The function then loops over the 16x16 spot image. For each bit in the spot's binary image, if
     the bit is set then it's part of the spot; try to draw it. A pixel is drawn on Spinda if the
-    pixel on Spinda satisfies the following formula: ((u8)(colorIndex - 1) <= 2). The -1 excludes
-    transparent pixels, as these are index 0. Therefore only colors 1, 2, or 3 on Spinda will
-    allow a spot to be drawn. These color indexes are Spinda's light brown body colors. To create
+    pixel is between FIRST_SPOT_COLOR and LAST_SPOT_COLOR (so only colors 1, 2, or 3 on Spinda will
+    allow a spot to be drawn). These color indexes are Spinda's light brown body colors. To create
     the spot it adds 4 to the color index, so Spinda's spots will be colors 5, 6, and 7.
 
     The above is done in TRY_DRAW_SPOT_PIXEL two different ways: one with << 4, and one without.
@@ -5188,38 +5230,15 @@ u8 GetTrainerEncounterMusicId(u16 trainerOpponentId)
 
 u16 ModifyStatByNature(u8 nature, u16 stat, u8 statIndex)
 {
-// Because this is a u16 it will be unable to store the
-// result of the multiplication for any stat > 595 for a
-// positive nature and > 728 for a negative nature.
-// Neither occur in the base game, but this can happen if
-// any Nature-affected base stat is increased to a value
-// above 248. The closest by default is Shuckle at 230.
-#ifdef BUGFIX
-    u32 retVal;
-#else
-    u16 retVal;
-#endif
-
     // Don't modify HP, Accuracy, or Evasion by nature
-    if (statIndex <= STAT_HP || statIndex > NUM_NATURE_STATS)
+    if (statIndex <= STAT_HP || statIndex > NUM_NATURE_STATS || gNaturesInfo[nature].statUp == gNaturesInfo[nature].statDown)
         return stat;
-
-    switch (gNatureStatTable[nature][statIndex - 1])
-    {
-    case 1:
-        retVal = stat * 110;
-        retVal /= 100;
-        break;
-    case -1:
-        retVal = stat * 90;
-        retVal /= 100;
-        break;
-    default:
-        retVal = stat;
-        break;
-    }
-
-    return retVal;
+    else if (statIndex == gNaturesInfo[nature].statUp)
+        return stat * 110 / 100;
+    else if (statIndex == gNaturesInfo[nature].statDown)
+        return stat * 90 / 100;
+    else
+        return stat;
 }
 
 void AdjustFriendship(struct Pokemon *mon, u8 event)
@@ -5247,7 +5266,7 @@ void AdjustFriendship(struct Pokemon *mon, u8 event)
     }
     else
     {
-        holdEffect = ItemId_GetHoldEffect(heldItem);
+        holdEffect = GetItemHoldEffect(heldItem);
     }
 
     if (species && species != SPECIES_EGG)
@@ -5813,7 +5832,9 @@ u16 GetBattleBGM(void)
         }
     }
     else if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
+    {
         return MUS_VS_TRAINER;
+    }
     else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
     {
         u8 trainerClass;
@@ -5860,7 +5881,9 @@ u16 GetBattleBGM(void)
         }
     }
     else
+    {
         return MUS_VS_WILD;
+    }
 }
 
 void PlayBattleBGM(void)
@@ -5951,6 +5974,10 @@ const u16 *GetMonSpritePalFromSpecies(u16 species, bool32 isShiny, bool32 isFema
 bool8 IsMoveHM(u16 move)
 {
     int i = 0;
+
+    if (P_CAN_FORGET_HIDDEN_MOVE)
+        return FALSE;
+
     while (sHMMoves[i] != HM_MOVES_END)
     {
         if (sHMMoves[i++] == move)
@@ -6059,9 +6086,9 @@ static inline bool32 CanFirstMonBoostHeldItemRarity(void)
         return FALSE;
 
     ability = GetMonAbility(&gPlayerParty[0]);
-    if ((OW_COMPOUND_EYES < GEN_9) && ability == ABILITY_COMPOUND_EYES)
+    if (ability == ABILITY_COMPOUND_EYES)
         return TRUE;
-    else if ((OW_SUPER_LUCK == GEN_8) && ability == ABILITY_SUPER_LUCK)
+    else if ((OW_SUPER_LUCK >= GEN_8) && ability == ABILITY_SUPER_LUCK)
         return TRUE;
     return FALSE;
 }
@@ -6280,22 +6307,22 @@ void BattleAnimateBackSprite(struct Sprite *sprite, u16 species)
 static u8 UNUSED GetOwnOpposingLinkMultiBattlerId(bool8 rightSide)
 {
     s32 i;
-    s32 battlerId = 0;
+    s32 battler = 0;
     u8 multiplayerId = GetMultiplayerId();
     switch (gLinkPlayers[multiplayerId].id)
     {
     case 0:
     case 2:
-        battlerId = rightSide ? 1 : 3;
+        battler = rightSide ? 1 : 3;
         break;
     case 1:
     case 3:
-        battlerId = rightSide ? 2 : 0;
+        battler = rightSide ? 2 : 0;
         break;
     }
     for (i = 0; i < MAX_LINK_PLAYERS; i++)
     {
-        if (gLinkPlayers[i].id == (s16)battlerId)
+        if (gLinkPlayers[i].id == (s16)battler)
             break;
     }
     return i;
@@ -6304,21 +6331,21 @@ static u8 UNUSED GetOwnOpposingLinkMultiBattlerId(bool8 rightSide)
 u8 GetOpposingLinkMultiBattlerId(bool8 rightSide, u8 multiplayerId)
 {
     s32 i;
-    s32 battlerId = 0;
+    s32 battler = 0;
     switch (gLinkPlayers[multiplayerId].id)
     {
     case 0:
     case 2:
-        battlerId = rightSide ? 1 : 3;
+        battler = rightSide ? 1 : 3;
         break;
     case 1:
     case 3:
-        battlerId = rightSide ? 2 : 0;
+        battler = rightSide ? 2 : 0;
         break;
     }
     for (i = 0; i < MAX_LINK_PLAYERS; i++)
     {
-        if (gLinkPlayers[i].id == (s16)battlerId)
+        if (gLinkPlayers[i].id == (s16)battler)
             break;
     }
     return i;
@@ -6384,7 +6411,7 @@ static bool8 ShouldSkipFriendshipChange(void)
 #define ALLOC_FAIL_STRUCT (1 << 1)
 #define GFX_MANAGER_ACTIVE 0xA3 // Arbitrary value
 
-static void InitMonSpritesGfx_Battle(struct MonSpritesGfxManager* gfx)
+static void InitMonSpritesGfx_Battle(struct MonSpritesGfxManager *gfx)
 {
     u16 i, j;
     for (i = 0; i < gfx->numSprites; i++)
@@ -6397,7 +6424,7 @@ static void InitMonSpritesGfx_Battle(struct MonSpritesGfxManager* gfx)
     }
 }
 
-static void InitMonSpritesGfx_FullParty(struct MonSpritesGfxManager* gfx)
+static void InitMonSpritesGfx_FullParty(struct MonSpritesGfxManager *gfx)
 {
     u16 i, j;
     for (i = 0; i < gfx->numSprites; i++)
@@ -6666,6 +6693,7 @@ u32 GetFormChangeTargetSpeciesBoxMon(struct BoxPokemon *boxMon, enum FormChanges
                 case FORM_CHANGE_WITHDRAW:
                 case FORM_CHANGE_DEPOSIT:
                 case FORM_CHANGE_FAINT:
+                case FORM_CHANGE_DAYS_PASSED:
                     targetSpecies = formChanges[i].targetSpecies;
                     break;
                 case FORM_CHANGE_STATUS:
