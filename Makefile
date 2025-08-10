@@ -377,6 +377,9 @@ $(C_BUILDDIR)/pokedex_plus_hgss.o: CFLAGS := -mthumb -mthumb-interwork -O2 -mabi
 # Annoyingly we can't turn this on just for src/data/trainers.h
 $(C_BUILDDIR)/data.o: CFLAGS += -fno-show-column -fno-diagnostics-show-caret
 
+# Needed for parity with pret
+$(C_BUILDDIR)/graphics.o: override CFLAGS += -Wno-missing-braces
+
 $(TEST_BUILDDIR)/%.o: CFLAGS := -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -Wno-pointer-to-int-cast -Werror -Wall -Wno-strict-aliasing -Wno-attribute-alias -Woverride-init
 
 # Dependency rules (for the *.c & *.s sources to .o files)

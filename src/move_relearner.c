@@ -404,9 +404,9 @@ void CB2_InitLearnMove(void)
     InitMoveRelearnerBackgroundLayers();
     InitMoveRelearnerWindows(gOriginSummaryScreenPage == PSS_PAGE_CONTEST_MOVES);
 
-    sMoveRelearnerMenuSate.listOffset = 0;
-    sMoveRelearnerMenuSate.listRow = 0;
-    sMoveRelearnerMenuSate.showContestInfo = gOriginSummaryScreenPage == PSS_PAGE_CONTEST_MOVES;
+    sMoveRelearnerMenuState.listOffset = 0;
+    sMoveRelearnerMenuState.listRow = 0;
+    sMoveRelearnerMenuState.showContestInfo = gOriginSummaryScreenPage == PSS_PAGE_CONTEST_MOVES;
 
     CreateLearnableMovesList();
 
@@ -999,7 +999,7 @@ void MoveRelearnerShowHideHearts(s32 move)
 
 void MoveRelearnerShowHideCategoryIcon(s32 moveId)
 {
-    if (sMoveRelearnerMenuSate.showContestInfo || moveId == LIST_CANCEL)
+    if (sMoveRelearnerMenuState.showContestInfo || moveId == LIST_CANCEL)
     {
         if (sMoveRelearnerStruct->categoryIconSpriteId != 0xFF)
             DestroySprite(&gSprites[sMoveRelearnerStruct->categoryIconSpriteId]);
