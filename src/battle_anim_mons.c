@@ -805,9 +805,9 @@ bool8 IsBattlerSpritePresent(u8 battlerId)
 {
     if (IsContest())
     {
-        if (gBattleAnimAttacker == battler)
+        if (gBattleAnimAttacker == battlerId)
             return TRUE;
-        else if (gBattleAnimTarget == battler)
+        else if (gBattleAnimTarget == battlerId)
             return TRUE;
         else
             return FALSE;
