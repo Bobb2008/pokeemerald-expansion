@@ -817,7 +817,7 @@ bool8 IsBattlerSpritePresent(u8 battlerId)
         if (GetBattlerPosition(battlerId) == 0xff)
             return FALSE;
 
-        if (!gBattleStruct->spriteIgnore0Hp && GetMonData(GetBattlerMon(battler), MON_DATA_HP) == 0)
+        if (!gBattleStruct->spriteIgnore0Hp && GetMonData(GetBattlerMon(battlerId), MON_DATA_HP) == 0)
             return FALSE;
         return TRUE;
     }
