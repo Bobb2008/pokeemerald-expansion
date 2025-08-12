@@ -181,7 +181,7 @@ static EWRAM_DATA struct {
     u16 listOffset;
     u16 listRow;
     bool8 showContestInfo;
-} sMoveRelearnerMenuSate = {0};
+} sMoveRelearnerMenuState = {0};
 
 EWRAM_DATA u8 gOriginSummaryScreenPage = 0; // indicates summary screen page that the move relearner was opened from (if opened from PSS)
 
