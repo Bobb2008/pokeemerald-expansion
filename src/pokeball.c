@@ -591,7 +591,7 @@ static void Task_DoPokeballSendOutAnim(u8 taskId)
         gSprites[ballSpriteId].invisible = TRUE;
         break;
     case POKEBALL_PLAYER_SENDOUT:
-        gBattlerTarget = battlerId;
+        gBattlerTarget = battler;
         gSprites[ballSpriteId].x = 24;
         gSprites[ballSpriteId].y = 68;
         gSprites[ballSpriteId].callback = SpriteCB_MonSendOut_1;
@@ -1072,7 +1072,7 @@ static void SpriteCB_BallThrow_StartCaptureMon(struct Sprite *sprite)
 static void HandleBallAnimEnd(struct Sprite *sprite)
 {
     bool8 affineAnimEnded = FALSE;
-    u8 battlerId = sprite->sBattler;
+    u8 battler = sprite->sBattler;
 
     if (sprite->data[7] == POKEBALL_PLAYER_SLIDEIN)
     {
@@ -1140,11 +1140,6 @@ static void SpriteCB_BallThrow_CaptureMon(struct Sprite *sprite)
         if (gMain.inBattle)
             gBattleSpritesDataPtr->healthBoxesData[battler].ballAnimActive = FALSE;
     }
-}
-
-static inline bool32 IsBattlerPlayer(u32 battler)
-{
-    return (battler % B_POSITION_PLAYER_RIGHT) ? FALSE : TRUE;
 }
 
 static inline bool32 IsBattlerPlayer(u32 battler)
