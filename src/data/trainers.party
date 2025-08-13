@@ -4866,37 +4866,50 @@ Items: Super Potion / Super Potion
 Double Battle: No
 AI: Basic Trainer
 
-Voltorb
-Level: 20
-IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
-- Rollout
-- Spark
-- Self Destruct
-- Shock Wave
+Geodude-Alola (M) @ Weakness Policy  
+Ability: Sturdy  
+Level: 20  
+EVs: 50 HP / 50 Atk / 20 Def / 50 SpA / 104 SpD / 50 Spe  
+Gentle Nature  
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe  
+- Tackle  
+- Rock Polish  
+- Rollout  
+- Shock Wave  
 
-Electrike
-Level: 20
-IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
-- Shock Wave
-- Leer
-- Quick Attack
-- Howl
+Luxio (M) @ Black Glasses  
+Ability: Intimidate  
+Level: 20  
+EVs: 30 HP / 10 Atk / 30 Def / 30 SpA / 30 SpD / 100 Spe  
+Timid Nature  
+IVs: 24 HP / 24 Def / 24 SpA / 24 SpD / 24 Spe  
+- Leer  
+- Shock Wave  
+- Bite  
+- Charge  
 
-Magneton
-Level: 22
-IVs: 26 HP / 26 Atk / 26 Def / 26 SpA / 26 SpD / 26 Spe
-- Supersonic
-- Shock Wave
-- Thunder Wave
-- Sonic Boom
+Magneton @ Eviolite  
+Ability: Analytic  
+Level: 22   
+EVs: 25 HP / 25 Atk / 25 Def / 100 SpA / 25 SpD / 10 Spe  
+Quiet Nature  
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 0 Spe  
+- Electric Terrain  
+- Supersonic  
+- Shock Wave  
+- Gyro Ball  
 
-Manectric @ Sitrus Berry
-Level: 24
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Quick Attack
-- Thunder Wave
-- Shock Wave
-- Howl
+Manectric (M) @ Covert Cloak  
+Ability: Static  
+Level: 24    
+EVs: 100 HP / 88 Atk / 80 Def / 80 SpA / 80 SpD / 80 Spe  
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe  
+- Shock Wave  
+- Quick Attack  
+- Bite  
+- Thunder Wave  
+
+
 
 === TRAINER_FLANNERY_1 ===
 Name: FLANNERY
